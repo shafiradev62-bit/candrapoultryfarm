@@ -1,0 +1,372 @@
+/* ============================================
+   LANDSCAPE MOBILE OPTIMIZATIONS
+   Force desktop layout to fit in mobile landscape
+   ============================================ */
+
+/* Base landscape mode for mobile devices */
+@media (orientation: landscape) and (max-height: 768px) {
+  
+  /* Ensure full viewport usage */
+  html, body {
+    height: 100vh;
+    overflow: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Sidebar adjustments for landscape */
+  [data-sidebar] {
+    width: 180px !important;
+    min-width: 180px !important;
+  }
+  
+  [data-sidebar] .sidebar-header {
+    padding: 0.75rem !important;
+  }
+  
+  [data-sidebar] .sidebar-header img {
+    height: 1.75rem !important;
+    width: 1.75rem !important;
+  }
+  
+  [data-sidebar] .sidebar-header h1 {
+    font-size: 0.7rem !important;
+    line-height: 1 !important;
+  }
+  
+  [data-sidebar] .sidebar-content {
+    padding: 0.5rem !important;
+  }
+  
+  [data-sidebar] .sidebar-group-label {
+    font-size: 0.65rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+  
+  [data-sidebar] .sidebar-menu-button {
+    padding: 0.4rem 0.6rem !important;
+    font-size: 0.75rem !important;
+    gap: 0.5rem !important;
+  }
+  
+  [data-sidebar] .sidebar-menu-button svg {
+    height: 0.875rem !important;
+    width: 0.875rem !important;
+  }
+  
+  [data-sidebar] .sidebar-footer {
+    padding: 0.5rem !important;
+  }
+  
+  [data-sidebar] .sidebar-footer p {
+    font-size: 0.65rem !important;
+  }
+  
+  [data-sidebar] .sidebar-footer .select-trigger {
+    height: 1.75rem !important;
+    font-size: 0.7rem !important;
+  }
+  
+  /* Header adjustments */
+  header {
+    height: 2.5rem !important;
+    min-height: 2.5rem !important;
+    padding: 0 0.75rem !important;
+  }
+  
+  header h2 {
+    font-size: 0.8rem !important;
+  }
+  
+  header button {
+    height: 1.75rem !important;
+    width: 1.75rem !important;
+  }
+  
+  header svg {
+    height: 0.875rem !important;
+    width: 0.875rem !important;
+  }
+  
+  /* Main content area */
+  main {
+    padding: 0.75rem !important;
+    height: calc(100vh - 2.5rem) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+  
+  /* Card and container spacing */
+  .space-y-6 > * + * {
+    margin-top: 0.75rem !important;
+  }
+  
+  .space-y-4 > * + * {
+    margin-top: 0.5rem !important;
+  }
+  
+  .space-y-2 > * + * {
+    margin-top: 0.25rem !important;
+  }
+  
+  /* Card padding */
+  .bg-card {
+    padding: 0.75rem !important;
+  }
+  
+  .rounded-lg {
+    border-radius: 0.375rem !important;
+  }
+  
+  /* Button sizing */
+  button {
+    font-size: 0.75rem !important;
+    padding: 0.375rem 0.75rem !important;
+    height: auto !important;
+  }
+  
+  button svg {
+    height: 0.875rem !important;
+    width: 0.875rem !important;
+  }
+  
+  /* Input and form elements */
+  input, select, textarea {
+    font-size: 0.75rem !important;
+    padding: 0.375rem 0.5rem !important;
+    height: 1.75rem !important;
+  }
+  
+  label {
+    font-size: 0.7rem !important;
+  }
+  
+  /* Table optimizations - CRITICAL for landscape */
+  table {
+    font-size: 0.65rem !important;
+  }
+  
+  th, td {
+    padding: 0.25rem 0.375rem !important;
+    white-space: nowrap !important;
+  }
+  
+  thead th {
+    font-size: 0.6rem !important;
+    padding: 0.25rem 0.375rem !important;
+  }
+  
+  tbody td {
+    font-size: 0.65rem !important;
+  }
+  
+  /* Table action buttons */
+  table button {
+    padding: 0.125rem 0.25rem !important;
+    height: 1.5rem !important;
+  }
+  
+  table button svg {
+    height: 0.75rem !important;
+    width: 0.75rem !important;
+  }
+  
+  /* Grid adjustments */
+  .grid {
+    gap: 0.5rem !important;
+  }
+  
+  /* Summary cards */
+  .grid > div {
+    padding: 0.5rem !important;
+  }
+  
+  .grid > div p:first-child {
+    font-size: 0.65rem !important;
+  }
+  
+  .grid > div p.text-xl,
+  .grid > div p.text-2xl {
+    font-size: 1rem !important;
+  }
+  
+  /* Dialog and modal adjustments */
+  [role="dialog"] {
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+  
+  .dialog-content {
+    padding: 0.75rem !important;
+  }
+  
+  .dialog-header {
+    padding-bottom: 0.5rem !important;
+  }
+  
+  .dialog-title {
+    font-size: 0.875rem !important;
+  }
+  
+  /* Tabs */
+  [role="tablist"] button {
+    font-size: 0.7rem !important;
+    padding: 0.375rem 0.75rem !important;
+  }
+  
+  /* Badge and status indicators */
+  .badge {
+    font-size: 0.6rem !important;
+    padding: 0.125rem 0.375rem !important;
+  }
+  
+  /* Popover and dropdown */
+  [role="menu"],
+  [role="listbox"] {
+    font-size: 0.7rem !important;
+  }
+  
+  /* Calendar picker */
+  .calendar {
+    font-size: 0.7rem !important;
+  }
+  
+  .calendar button {
+    height: 1.5rem !important;
+    width: 1.5rem !important;
+    font-size: 0.65rem !important;
+  }
+  
+  /* Toast notifications */
+  [data-sonner-toast] {
+    font-size: 0.75rem !important;
+  }
+  
+  /* Specific page adjustments */
+  
+  /* Dashboard stats */
+  .text-base {
+    font-size: 0.8rem !important;
+  }
+  
+  .text-lg {
+    font-size: 0.9rem !important;
+  }
+  
+  /* Hide less critical elements in very small landscape */
+  @media (max-height: 500px) {
+    .text-muted-foreground.text-sm {
+      display: none !important;
+    }
+    
+    /* Further reduce spacing */
+    main {
+      padding: 0.5rem !important;
+    }
+    
+    .space-y-6 > * + * {
+      margin-top: 0.5rem !important;
+    }
+    
+    .space-y-4 > * + * {
+      margin-top: 0.375rem !important;
+    }
+  }
+  
+  /* Extra small landscape screens */
+  @media (max-height: 400px) {
+    [data-sidebar] {
+      width: 150px !important;
+      min-width: 150px !important;
+    }
+    
+    header {
+      height: 2rem !important;
+      min-height: 2rem !important;
+    }
+    
+    main {
+      height: calc(100vh - 2rem) !important;
+      padding: 0.375rem !important;
+    }
+    
+    table {
+      font-size: 0.6rem !important;
+    }
+    
+    th, td {
+      padding: 0.125rem 0.25rem !important;
+    }
+    
+    button {
+      font-size: 0.65rem !important;
+      padding: 0.25rem 0.5rem !important;
+    }
+  }
+}
+
+/* Ensure tables don't break layout */
+@media (orientation: landscape) and (max-height: 768px) {
+  .overflow-x-auto {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  /* Make table container scrollable horizontally if needed */
+  table {
+    min-width: 100% !important;
+  }
+  
+  /* Prevent text wrapping in table cells */
+  td, th {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  
+  /* Allow specific columns to wrap if needed */
+  td:last-child,
+  th:last-child {
+    white-space: normal !important;
+  }
+}
+
+/* Scrollbar styling for landscape mode */
+@media (orientation: landscape) and (max-height: 768px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Print optimizations (if needed) */
+@media print {
+  #portrait-overlay {
+    display: none !important;
+  }
+  
+  [data-sidebar] {
+    display: none !important;
+  }
+  
+  header {
+    display: none !important;
+  }
+  
+  main {
+    padding: 0 !important;
+    height: auto !important;
+  }
+}

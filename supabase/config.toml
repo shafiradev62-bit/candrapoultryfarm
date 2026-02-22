@@ -1,0 +1,7 @@
+project_id = "vrhjknipbztmtqxnzfgp"
+
+[functions.syncsheets]
+verify_jwt = false
+
+[functions.sync-redis]
+verify_jwt = false

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta id="viewport-meta" name="viewport" content="width=1280, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Candra Monitoring - Dashboard</title>
+    <meta name="description" content="Candra Poultry Farm - Monitoring Dashboard">
+    <meta name="author" content="Candra Poultry Farm" />
+    
+    <style>
+      /* Force landscape mode for monitoring app */
+      @media (orientation: portrait) {
+        #portrait-overlay {
+          display: flex !important;
+        }
+        #root {
+          display: none !important;
+        }
+      }
+      
+      #portrait-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        z-index: 9999;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        text-align: center;
+        color: white;
+      }
+      
+      #portrait-overlay svg {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 1.5rem;
+        animation: rotate 2s ease-in-out infinite;
+      }
+      
+      #portrait-overlay h2 {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+      }
+      
+      #portrait-overlay p {
+        font-size: 1rem;
+        opacity: 0.9;
+        max-width: 300px;
+      }
+      
+      @keyframes rotate {
+        0%, 100% { transform: rotate(0deg); }
+        50% { transform: rotate(90deg); }
+      }
+      
+      /* Landscape optimizations */
+      @media (orientation: landscape) {
+        body {
+          overflow: hidden;
+        }
+        
+        #root {
+          height: 100vh;
+          overflow: hidden;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="portrait-overlay">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+      </svg>
+      <h2>Mode Monitoring</h2>
+      <p>Aplikasi monitoring hanya dapat digunakan dalam mode Landscape. Silakan putar perangkat Anda.</p>
+    </div>
+    <div id="root"></div>
+    <script type="module" src="/src/main-monitoring.tsx"></script>
+    <script>
+      // Set monitoring mode flag
+      window.APP_MODE = 'monitoring';
+      
+      // Force landscape viewport
+      function adjustViewport() {
+        const viewportMeta = document.getElementById('viewport-meta');
+        const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+        
+        if (isLandscape) {
+          const screenWidth = window.screen.width;
+          const targetWidth = 1280;
+          const scale = Math.min(screenWidth / targetWidth, 1).toFixed(3);
+          
+          viewportMeta.setAttribute('content', 
+            `width=${targetWidth}, initial-scale=${scale}, maximum-scale=${scale}, user-scalable=no`
+          );
+        }
+      }
+      
+      adjustViewport();
+      window.addEventListener('orientationchange', () => setTimeout(adjustViewport, 100));
+      window.addEventListener('resize', adjustViewport);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>External Project Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .panel { border: 1px solid #ddd; padding: 20px; border-radius: 8px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select, button { width: 100%; padding: 8px; margin-bottom: 10px; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .data-list { max-height: 300px; overflow-y: auto; }
+        .data-item { border: 1px solid #eee; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
+        .status { padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>External Project Tester</h1>
+    
+    <div class="container">
+        <!-- Sender Panel -->
+        <div class="panel">
+            <h2>Send Data to Farm App</h2>
+            <div class="form-group">
+                <label for="productName">Product Name:</label>
+                <input type="text" id="productName" value="Test Product from External">
+            </div>
+            <div class="form-group">
+                <label for="quantity">Quantity:</label>
+                <input type="number" id="quantity" value="25">
+            </div>
+            <div class="form-group">
+                <label for="unit">Unit:</label>
+                <select id="unit">
+                    <option value="kg">kg</option>
+                    <option value="pcs">pcs</option>
+                    <option value="liter">liter</option>
+                    <option value="sack">sack</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="category">Category:</label>
+                <select id="category">
+                    <option value="pakan">Pakan</option>
+                    <option value="obat">Obat</option>
+                    <option value="vitamin">Vitamin</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <button id="sendBtn">Send to Farm App</button>
+            <div id="sendStatus"></div>
+        </div>
+
+        <!-- Receiver Panel -->
+        <div class="panel">
+            <h2>Received from Farm App</h2>
+            <div id="receivedData" class="data-list">
+                <p>No data received yet</p>
+            </div>
+            <div id="receiveStatus"></div>
+        </div>
+    </div>
+
+    <script>
+        // Project Connector Implementation
+        const DEBUG_MODE = true;
+        const STORAGE_KEY_PREFIX = 'project_connector_';
+        const EVENT_PREFIX = 'project_connector_';
+
+        const CONNECTOR_EVENTS = {
+            DATA_SENT: `${EVENT_PREFIX}data_sent`,
+            DATA_RECEIVED: `${EVENT_PREFIX}data_received`,
+            CONNECTED: `${EVENT_PREFIX}connected`,
+            DISCONNECTED: `${EVENT_PREFIX}disconnected`,
+            ERROR: `${EVENT_PREFIX}error`
+        };
+
+        class ProjectConnector {
+            constructor(projectId, targetProjectId) {
+                this.projectId = projectId;
+                this.targetProjectId = targetProjectId;
+                this.initialize();
+            }
+
+            initialize() {
+                // Listen for incoming data
+                window.addEventListener(CONNECTOR_EVENTS.DATA_SENT, this.handleIncomingData.bind(this));
+                window.addEventListener('storage', this.handleStorageChange.bind(this));
+                
+                this.log('Connector initialized', { projectId: this.projectId, targetProjectId: this.targetProjectId });
+            }
+
+            sendData(type, data) {
+                try {
+                    const sharedData = {
+                        id: `${this.projectId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                        type,
+                        data,
+                        timestamp: Date.now(),
+                        sourceProjectId: this.projectId,
+                        targetProjectId: this.targetProjectId,
+                        processed: false
+                    };
+
+                    // Store in localStorage
+                    const storageKey = `${STORAGE_KEY_PREFIX}${sharedData.id}`;
+                    localStorage.setItem(storageKey, JSON.stringify(sharedData));
+                    
+                    // Dispatch event
+                    this.dispatchEvent(CONNECTOR_EVENTS.DATA_SENT, sharedData);
+                    
+                    this.log('Data sent', sharedData);
+                    return true;
+                } catch (error) {
+                    this.log('Error sending data', error);
+                    return false;
+                }
+            }
+
+            handleIncomingData(event) {
+                const sharedData = event.detail;
+                
+                if (sharedData.targetProjectId !== this.projectId) {
+                    return;
+                }
+                
+                try {
+                    const storageKey = `${STORAGE_KEY_PREFIX}received_${sharedData.id}`;
+                    localStorage.setItem(storageKey, JSON.stringify(sharedData));
+                    this.dispatchEvent(CONNECTOR_EVENTS.DATA_RECEIVED, sharedData);
+                    this.displayReceivedData(sharedData);
+                    this.log('Data received', sharedData);
+                } catch (error) {
+                    this.log('Error handling incoming data', error);
+                }
+            }
+
+            handleStorageChange(event) {
+                if (!event.key || !event.key.startsWith(STORAGE_KEY_PREFIX)) return;
+                
+                if (event.key.startsWith(`${STORAGE_KEY_PREFIX}received_`)) {
+                    try {
+                        const sharedData = JSON.parse(event.newValue || '');
+                        if (sharedData.targetProjectId === this.projectId) {
+                            this.dispatchEvent(CONNECTOR_EVENTS.DATA_RECEIVED, sharedData);
+                            this.displayReceivedData(sharedData);
+                        }
+                    } catch (error) {
+                        this.log('Error parsing received data', error);
+                    }
+                }
+            }
+
+            displayReceivedData(data) {
+                const container = document.getElementById('receivedData');
+                const item = document.createElement('div');
+                item.className = 'data-item';
+                item.innerHTML = `
+                    <strong>${data.type}</strong> - ${new Date(data.timestamp).toLocaleString()}<br>
+                    Product: ${data.data.productName}<br>
+                    Quantity: ${data.data.quantity} ${data.data.unit}<br>
+                    Category: ${data.data.category}<br>
+                    Source: ${data.data.source}
+                `;
+                container.appendChild(item);
+                
+                // Remove "No data received" message if present
+                const noDataMsg = container.querySelector('p');
+                if (noDataMsg) {
+                    container.removeChild(noDataMsg);
+                }
+            }
+
+            dispatchEvent(eventName, detail) {
+                const event = new CustomEvent(eventName, { detail });
+                window.dispatchEvent(event);
+            }
+
+            log(message, data) {
+                if (DEBUG_MODE) {
+                    console.log(`[ProjectConnector:${this.projectId}] ${message}`, data || '');
+                }
+            }
+        }
+
+        // Initialize connectors
+        const senderConnector = new ProjectConnector('external-project', 'farm-management-app');
+        const receiverConnector = new ProjectConnector('farm-management-app', 'external-project');
+
+        // DOM Elements
+        const sendBtn = document.getElementById('sendBtn');
+        const sendStatus = document.getElementById('sendStatus');
+        const receiveStatus = document.getElementById('receiveStatus');
+
+        // Send data function
+        sendBtn.addEventListener('click', () => {
+            const productName = document.getElementById('productName').value;
+            const quantity = document.getElementById('quantity').value;
+            const unit = document.getElementById('unit').value;
+            const category = document.getElementById('category').value;
+
+            if (!productName || !quantity) {
+                showStatus(sendStatus, 'Please fill in all fields', 'error');
+                return;
+            }
+
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Sending...';
+
+            const testData = {
+                productName,
+                quantity: parseFloat(quantity),
+                unit,
+                category,
+                timestamp: Date.now(),
+                source: 'External Project HTML Test'
+            };
+
+            const success = senderConnector.sendData('stock_item', testData);
+            
+            if (success) {
+                showStatus(sendStatus, `Data sent successfully to farm app!`, 'success');
+                // Reset form
+                document.getElementById('productName').value = 'Test Product from External';
+                document.getElementById('quantity').value = '25';
+            } else {
+                showStatus(sendStatus, 'Failed to send data', 'error');
+            }
+
+            setTimeout(() => {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send to Farm App';
+            }, 2000);
+        });
+
+        // Listen for data from farm app
+        window.addEventListener(CONNECTOR_EVENTS.DATA_RECEIVED, (event) => {
+            const data = event.detail;
+            showStatus(receiveStatus, `Received data from farm app: ${data.data?.productName || 'Unknown'}`, 'success');
+        });
+
+        function showStatus(element, message, type) {
+            element.className = `status ${type}`;
+            element.textContent = message;
+            setTimeout(() => {
+                element.className = 'status';
+                element.textContent = '';
+            }, 5000);
+        }
+
+        console.log('External Project Tester loaded and ready!');
+    </script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+{
+  "appId": "com.candrapoultryfarm.app",
+  "productName": "Candra Poultry Farm",
+  "artifactName": "Candra Poultry Farm.${ext}",
+  "directories": {
+    "output": "dist-electron"
+  },
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64",
+          "ia32"
+        ]
+      }
+    ],
+    "icon": "logo.png",
+    "sign": false,
+    "signAndEditExecutable": false
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "public/**/*",
+    "logo.png"
+  ],
+  "extraResources": [
+    {
+      "from": "logo.png",
+      "to": "logo.png"
+    }
+  ]
+}

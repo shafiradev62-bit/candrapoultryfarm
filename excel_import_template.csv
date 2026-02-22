@@ -1,0 +1,6 @@
+tanggal,kandang_code,batch_code,populasi_awal,kematian,penyebab_kematian,terjual,telur_total,telur_kg,telur_grade_a,telur_grade_b,telur_grade_c,telur_pecah,telur_kotor,pakan_kg,jenis_pakan,vitamin_obat,air_liter,listrik_kwh,catatan
+2026-02-16,K001,BATCH-001,5000,2,Salmonella,0,4500,400.00,4000,400,50,30,20,1200.00,"Campuran Layer",Vitamin ABC,2500.00,350.00,"Kondisi kandang baik"
+2026-02-16,K002,BATCH-002,3000,1,Respiratory,0,2800,250.00,2500,200,30,15,10,750.00,"Layer Premium",Obat Gumboro,1800.00,280.00,"Produksi stabil"
+2026-02-15,K001,BATCH-001,5000,1,Gumboro,0,4400,390.00,3950,350,40,25,15,1180.00,"Campuran Layer",Vitamin ADE,2450.00,340.00,"Pakan habis 100kg"
+2026-02-15,K002,BATCH-002,3000,0,,0,2750,245.00,2480,180,25,12,8,730.00,"Layer Premium",,1750.00,270.00,"Normal"
+2026-02-14,K001,BATCH-001,5000,3,E.coli,0,4300,380.00,3850,300,35,20,10,1150.00,"Campuran Layer",Antibiotik,2400.00,330.00,"Suhu panas"

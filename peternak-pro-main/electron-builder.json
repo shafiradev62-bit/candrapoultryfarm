@@ -1,0 +1,58 @@
+{
+  "appId": "com.candrapoultryfarm.app",
+  "productName": "CANDRA POULTRY FARM",
+  "directories": {
+    "output": "dist-electron"
+  },
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64",
+          "ia32"
+        ]
+      }
+    ],
+    "icon": "public/logo.png",
+    "requestedExecutionLevel": "asInvoker",
+    "signAndEditExecutable": false
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "installerIcon": "public/logo.png",
+    "uninstallerIcon": "public/logo.png",
+    "uninstallDisplayName": "CANDRA POULTRY FARM",
+    "artifactName": "${productName}-Setup-${version}.${ext}",
+    "oneClick": false,
+    "perMachine": false,
+    "allowElevation": true,
+    "allowToChangeInstallationDirectory": true,
+    "menuCategory": true,
+    "runAfterFinish": true,
+    "createDesktopShortcut": "always",
+    "createStartMenuShortcut": true,
+    "warningsAsErrors": false
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "public/**/*"
+  ],
+  "extraResources": [
+    {
+      "from": "public/logo.png",
+      "to": "logo.png"
+    }
+  ],
+  "publish": {
+    "provider": "github",
+    "owner": "shafiradev62-bit",
+    "repo": "peternak-pro"
+  },
+  "compression": "normal",
+  "asar": true
+}
