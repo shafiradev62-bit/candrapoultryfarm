@@ -8,6 +8,7 @@ import { useAppData } from "@/contexts/AppDataContext";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useNavigate } from "react-router-dom";
 import { CalendarIcon, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -20,6 +21,7 @@ import {
 
 export default function MobileInput() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { dailyReports, addDailyReport, warehouseEntries, feedFormulas } = useAppData();
   const [step, setStep] = useState(1);
 
@@ -144,6 +146,11 @@ export default function MobileInput() {
       setTotalPakan("");
       setVitaminObat("");
       setKeterangan("");
+      
+      // Navigate to dashboard after data is synced
+      setTimeout(() => {
+        navigate("/mobile");
+      }, 2500);
     } catch (error) {
       toast({ title: "Error", description: "Gagal menambah laporan", variant: "destructive" });
     }

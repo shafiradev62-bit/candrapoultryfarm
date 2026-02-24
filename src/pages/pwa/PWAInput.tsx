@@ -4,9 +4,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useAppData } from "@/contexts/AppDataContext";
 import { format } from "date-fns";
 import { Check } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function PWAInput() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { dailyReports, addDailyReport, warehouseEntries, feedFormulas } = useAppData();
   const [step, setStep] = useState(1);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -113,6 +115,8 @@ export default function PWAInput() {
       });
 
       toast({ title: "Berhasil", description: "Laporan harian berhasil ditambahkan" });
+      
+      // Reset form
       setStep(1);
       setTanggal(format(new Date(), "yyyy-MM-dd"));
       setKematian("");
@@ -123,6 +127,11 @@ export default function PWAInput() {
       setTotalPakan("");
       setVitaminObat("");
       setKeterangan("");
+      
+      // Navigate to dashboard after data is synced (wait for auto-push debounce + buffer)
+      setTimeout(() => {
+        navigate("/pwa");
+      }, 2500);
     } catch (error) {
       toast({ title: "Error", description: "Gagal menambah laporan", variant: "destructive" });
     }

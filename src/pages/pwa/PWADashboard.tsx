@@ -1,10 +1,16 @@
 import { PWALayout } from "@/components/PWALayout";
 import { useAppData } from "@/contexts/AppDataContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEffect } from "react";
 
 export default function PWADashboard() {
   const { warehouseEntries, dailyReports } = useAppData();
   const { role } = useAuth();
+
+  // Force re-render when component mounts to ensure latest data is shown
+  useEffect(() => {
+    console.log("📊 PWA Dashboard mounted - Reports count:", dailyReports.length);
+  }, [dailyReports.length]);
 
   const currentStock = warehouseEntries[warehouseEntries.length - 1] ?? {
     stokJagung: 0,
@@ -15,6 +21,11 @@ export default function PWADashboard() {
   };
 
   const latestReport = dailyReports[dailyReports.length - 1];
+  
+  // Debug: Log data to console
+  console.log("📊 PWA Dashboard - Total Reports:", dailyReports.length);
+  console.log("📊 PWA Dashboard - Latest Report:", latestReport);
+  
   const hasLowStock = currentStock.stokJagung < 100 || currentStock.stokKonsentrat < 70 || currentStock.stokDedak < 50;
 
   return (
@@ -89,7 +100,7 @@ export default function PWADashboard() {
         </div>
 
         {/* Latest Report - Proper */}
-        {latestReport && (
+        {latestReport ? (
           <div>
             <h3 className="text-sm font-bold text-[#1B4332] mb-3">Laporan Terakhir</h3>
             <div className="bg-white rounded-[20px] p-4 shadow-sm space-y-2.5">
@@ -109,6 +120,14 @@ export default function PWADashboard() {
                 <span className="text-sm text-gray-500">% Produksi</span>
                 <span className="text-sm font-bold text-[#1B4332]">{latestReport.pctProduksi}</span>
               </div>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <h3 className="text-sm font-bold text-[#1B4332] mb-3">Laporan Terakhir</h3>
+            <div className="bg-white rounded-[20px] p-6 shadow-sm text-center">
+              <p className="text-sm text-gray-500">Belum ada laporan harian</p>
+              <p className="text-xs text-gray-400 mt-1">Silakan tambahkan input harian terlebih dahulu</p>
             </div>
           </div>
         )}
