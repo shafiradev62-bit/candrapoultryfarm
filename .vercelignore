@@ -1,0 +1,11 @@
+peternak-pro-main/
+android/
+android-monitoring/
+dist-input/
+dist-monitoring/
+dist-pwa/
+electron/
+*.apk
+*.bat
+*.md
+!README.md
