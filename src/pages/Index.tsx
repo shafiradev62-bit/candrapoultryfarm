@@ -13,7 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useAppData } from "@/contexts/AppDataContext";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parse } from "date-fns";
 import { QRCodeCanvas } from "qrcode.react";
@@ -37,6 +37,8 @@ const Dashboard = () => {
   } = useAppData();
   const { toast } = useToast();
   const [submittingKandang, setSubmittingKandang] = useState<string | null>(null);
+  const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
+  const [isAutoSyncing, setIsAutoSyncing] = useState(false);
   const latestReport = dailyReports[dailyReports.length - 1];
   const [reportDate, setReportDate] = useState<Date | undefined>(() => {
     if (latestReport?.tanggal) {
@@ -169,6 +171,25 @@ const Dashboard = () => {
     toast({ title: "Data Diperbarui", description: "Dashboard telah dimuat ulang" });
   };
 
+  // Monitor data changes for auto-sync indicator
+  useEffect(() => {
+    setIsAutoSyncing(true);
+    setLastSyncTime(new Date());
+    const timer = setTimeout(() => setIsAutoSyncing(false), 1000);
+    return () => clearTimeout(timer);
+  }, [dailyReports, warehouseEntries, salesEntries, operationalEntries, financeEntries]);
+
+  // Format last sync time
+  const formatSyncTime = (date: Date) => {
+    const now = new Date();
+    const diffSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    if (diffSeconds < 10) return "Baru saja";
+    if (diffSeconds < 60) return `${diffSeconds} detik lalu`;
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    if (diffMinutes < 60) return `${diffMinutes} menit lalu`;
+    return format(date, "HH:mm");
+  };
+
   return (
     <AppLayout title="Dashboard">
       <div className="min-h-screen bg-gradient-to-br from-cream-100 to-cream-50 safe-area-padding">
@@ -190,6 +211,10 @@ const Dashboard = () => {
                   <p className="text-lg font-bold text-forest-700">
                     Rp {latestSaldo.toLocaleString("id-ID")}
                   </p>
+                  <div className="flex items-center justify-end gap-1 mt-1">
+                    <div className={`w-2 h-2 rounded-full ${isAutoSyncing ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} />
+                    <span className="text-xs text-gray-500">{formatSyncTime(lastSyncTime)}</span>
+                  </div>
                 </div>
                 <div className="w-12 h-12 bg-gradient-to-br from-forest-500 to-forest-700 rounded-full flex items-center justify-center text-white font-bold">
                   <User size={20} />

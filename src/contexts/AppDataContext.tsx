@@ -231,6 +231,50 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
+  // Real-time polling sync for APK <-> Web (every 3 seconds)
+  const lastSyncHashRef = useRef<string>("");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const pollInterval = setInterval(() => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+
+        // Check if data has changed using hash
+        const currentHash = raw.length + raw.substring(0, 100);
+        if (currentHash === lastSyncHashRef.current) return;
+
+        const newData = JSON.parse(raw);
+        const currentData = {
+          warehouseEntries,
+          salesEntries,
+          operationalEntries,
+          dailyReports,
+          financeEntries,
+          feedFormulas,
+        };
+
+        // Compare data to avoid unnecessary updates
+        const hasChanges = JSON.stringify(newData) !== JSON.stringify(currentData);
+        if (hasChanges) {
+          console.log("🔄 Auto-sync: New data detected from APK");
+          setWarehouseEntries(newData.warehouseEntries || []);
+          setSalesEntries(newData.salesEntries || []);
+          setOperationalEntries(newData.operationalEntries || []);
+          setDailyReports(newData.dailyReports || []);
+          setFinanceEntries(newData.financeEntries || []);
+          setFeedFormulas(newData.feedFormulas || []);
+          lastSyncHashRef.current = currentHash;
+        }
+      } catch (error) {
+        console.error("Polling sync error:", error);
+      }
+    }, 3000); // Poll every 3 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [warehouseEntries, salesEntries, operationalEntries, dailyReports, financeEntries, feedFormulas]);
+
   // Auto-sync to Upstash Redis
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
