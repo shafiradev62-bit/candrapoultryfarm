@@ -6,10 +6,12 @@
   "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
+    "dev:mobile": "vite --config vite.config.mobile.ts",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "build:monitoring": "vite build --config vite.config.monitoring.ts --mode production",
     "build:input": "vite build --config vite.config.input.ts --mode production",
+    "build:mobile": "vite build --config vite.config.mobile.ts --mode production",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
