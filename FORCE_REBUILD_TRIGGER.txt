@@ -1,0 +1,7 @@
+This file forces Vercel to rebuild from scratch.
+Timestamp: 2024-12-24 16:40:00
+Commit: 6777cb6
+WarehousePage.tsx: 856 lines (CLEAN VERSION)
+Previous broken version: 1250+ lines
+
+DO NOT DELETE THIS FILE - It breaks Vercel cache
