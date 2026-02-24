@@ -29,7 +29,7 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Save, History, Calendar as CalendarIcon2, Download, Beaker, Pencil, Trash2, Upload, CalendarIcon, FileDown, Filter } from "lucide-react";
+import { Save, History, Calendar as CalendarIcon2, Download, Beaker, Pencil, Trash2, Upload, CalendarIcon, FileDown, Filter, CheckCircle2, Circle, ArrowRight, Users, TrendingUp, Package, AlertCircle } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { exportToExcel } from "@/lib/exportExcel";
 import { jsPDF } from "jspdf";
@@ -48,6 +48,7 @@ const DailyReportPage = () => {
   const { role } = useAuth();
   const isWorker = role !== "owner";
   const [activeTab, setActiveTab] = useState("input");
+  const [currentStep, setCurrentStep] = useState(1);
   const [inputDate, setInputDate] = useState<Date | undefined>(new Date());
   const [usia, setUsia] = useState("");
   const [jumlahAyam, setJumlahAyam] = useState("");
@@ -80,6 +81,14 @@ const DailyReportPage = () => {
   const [filterStartDate, setFilterStartDate] = useState<Date | undefined>(undefined);
   const [filterEndDate, setFilterEndDate] = useState<Date | undefined>(undefined);
   const [showFilter, setShowFilter] = useState(false);
+
+  // Stepper configuration
+  const steps = [
+    { id: 1, title: "Data Populasi", icon: Users, description: "Usia dan jumlah ayam" },
+    { id: 2, title: "Data Pakan", icon: Package, description: "Konsumsi dan jenis pakan" },
+    { id: 3, title: "Produksi", icon: TrendingUp, description: "Hasil telur dan reject" },
+    { id: 4, title: "Konfirmasi", icon: CheckCircle2, description: "Review dan simpan" }
+  ];
 
   const activeFormula = useMemo(
     () => feedFormulas.find((formula) => formula.is_active) ?? null,
@@ -245,6 +254,40 @@ const DailyReportPage = () => {
       toast({ title: "PDF berhasil dibuat", description: "File PDF telah didownload." });
     } catch (error) {
       toast({ title: "Error", description: "Gagal membuat PDF", variant: "destructive" });
+    }
+  };
+
+  // Stepper navigation functions
+  const nextStep = () => {
+    if (currentStep < steps.length) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const goToStep = (step: number) => {
+    if (step >= 1 && step <= steps.length) {
+      setCurrentStep(step);
+    }
+  };
+
+  const isStepComplete = (step: number) => {
+    switch (step) {
+      case 1:
+        return usia && jumlahAyam;
+      case 2:
+        return totalPakan;
+      case 3:
+        return prodButir;
+      case 4:
+        return true;
+      default:
+        return false;
     }
   };
 
@@ -478,144 +521,426 @@ const DailyReportPage = () => {
 
   return (
     <AppLayout title="Daily Report">
-      <div className="p-4 lg:p-6">
-      <div className="space-y-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h1 className="text-lg font-semibold text-primary">Laporan Harian Kandang</h1>
-            <p className="text-sm text-muted-foreground">
-              CANDRA POULTRY FARM — Jl. Pendakian Gunung Kerinci (R10), Kec. Kayu Aro Barat, Kab. Kerinci, Jambi
-            </p>
+      <div className="min-h-screen bg-gradient-to-br from-cream-100 to-cream-50 safe-area-padding">
+        <div className="p-4 lg:p-6 max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="mb-6">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-bold text-forest-700 mb-1">Input Laporan Harian</h1>
+                <p className="text-forest-500">
+                  CANDRA POULTRY FARM — {new Date().toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="border-forest-200 text-forest-600">
+                  {role === "owner" ? "Owner" : "Worker"}
+                </Badge>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <CalendarIcon2 className="h-4 w-4" />
-            <span>{new Date().toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</span>
-          </div>
-        </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="bg-secondary">
-            {!isWorker && (
-              <TabsTrigger value="input" className="data-[state=active]:bg-card">Input Harian</TabsTrigger>
-            )}
-            <TabsTrigger value="history" className="data-[state=active]:bg-card">Riwayat</TabsTrigger>
-          </TabsList>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="bg-white border border-cream-200 rounded-xl p-1">
+              {!isWorker && (
+                <TabsTrigger value="input" className="data-[state=active]:bg-forest-600 data-[state=active]:text-white rounded-lg">
+                  <Users className="w-4 h-4 mr-2" />
+                  Input Harian
+                </TabsTrigger>
+              )}
+              <TabsTrigger value="history" className="data-[state=active]:bg-forest-600 data-[state=active]:text-white rounded-lg">
+                <History className="w-4 h-4 mr-2" />
+                Riwayat
+              </TabsTrigger>
+            </TabsList>
 
           {!isWorker && (
-            <TabsContent value="input" className="space-y-4">
-            {/* Active Formula Banner */}
-            {activeFormula ? (
-              <div className="bg-accent/50 border border-primary/10 rounded-lg p-4 flex items-center gap-3">
-                <Beaker className="h-5 w-5 text-primary shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-primary">Formulasi Aktif: {activeFormula.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Jagung {activeFormula.corn_pct}% | Konsentrat {activeFormula.concentrate_pct}% | Dedak {activeFormula.bran_pct}%
-                  </p>
+            <TabsContent value="input" className="space-y-6">
+              {/* Active Formula Banner */}
+              {activeFormula ? (
+                <div className="bg-gradient-to-r from-forest-50 to-cream-50 border border-forest-200 rounded-[24px] p-4 flex items-center gap-3 shadow-sm">
+                  <div className="w-10 h-10 bg-forest-600 rounded-xl flex items-center justify-center">
+                    <Beaker className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-forest-700">Formulasi Aktif: {activeFormula.name}</p>
+                    <p className="text-xs text-forest-500">
+                      Jagung {activeFormula.corn_pct}% | Konsentrat {activeFormula.concentrate_pct}% | Dedak {activeFormula.bran_pct}%
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-                <p className="text-sm text-destructive font-medium">Belum ada formulasi pakan aktif. Silakan buat di menu Pengaturan.</p>
-              </div>
-            )}
-
-            <div className="bg-card rounded-lg border p-5">
-              <h3 className="font-semibold text-primary mb-4">Form Input Produksi</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold">Tanggal</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-12 md:h-11", !inputDate && "text-muted-foreground")}>
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {inputDate ? format(inputDate, "dd-MMM-yy") : <span>Pilih tanggal</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={inputDate} onSelect={setInputDate} initialFocus className="p-3 pointer-events-auto" />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">Usia Ayam (Minggu)</Label>
-                  <Input type="number" placeholder="0" className="h-12 md:h-11" value={usia} onChange={(e) => setUsia(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">Jumlah Ayam (ekor)</Label>
-                  <Input type="number" placeholder="0" className="h-12 md:h-11" value={jumlahAyam} onChange={(e) => setJumlahAyam(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">Kematian (ekor)</Label>
-                  <Input type="number" placeholder="0" className="h-12 md:h-11" value={kematian} onChange={(e) => setKematian(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">Jual Ayam (ekor)</Label>
-                  <Input type="number" placeholder="0" className="h-12 md:h-11" value={jualAyam} onChange={(e) => setJualAyam(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold">Total Pakan (kg)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0"
-                    className="h-12 md:h-11 border-primary/30"
-                    value={totalPakan}
-                    onChange={(e) => setTotalPakan(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">Vitamin/Obat/Vaksin</Label>
-                  <Input placeholder="-" className="h-12 md:h-11" value={vitaminObat} onChange={(e) => setVitaminObat(e.target.value)} />
-                </div>
-              </div>
-
-              {/* Auto-calculated feed breakdown */}
-              {parseFloat(totalPakan) > 0 && activeFormula && (
-                <div className="mt-4 p-4 bg-accent/30 rounded-lg border border-primary/10">
-                  <p className="text-xs font-medium text-muted-foreground mb-2">Breakdown Pakan Otomatis (Formulasi: {activeFormula.name})</p>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Jagung ({activeFormula.corn_pct}%)</p>
-                      <p className="text-lg font-semibold text-primary">{cornKg} kg</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Konsentrat ({activeFormula.concentrate_pct}%)</p>
-                      <p className="text-lg font-semibold text-primary">{concKg} kg</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Dedak ({activeFormula.bran_pct}%)</p>
-                      <p className="text-lg font-semibold text-primary">{branKg} kg</p>
-                    </div>
+              ) : (
+                <div className="bg-red-50 border border-red-200 rounded-[24px] p-4">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-5 w-5 text-red-600" />
+                    <p className="text-sm text-red-700 font-medium">Belum ada formulasi pakan aktif. Silakan buat di menu Pengaturan.</p>
                   </div>
                 </div>
               )}
 
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm">Produksi Telur (Butir)</Label>
-                  <Input type="number" placeholder="0" className="h-12 md:h-11" value={prodButir} onChange={(e) => setProdButir(e.target.value)} />
+              {/* Stepper Progress */}
+              <div className="bg-white rounded-[24px] shadow-md border border-cream-100 p-6">
+                <div className="flex items-center justify-between mb-8">
+                  {steps.map((step, index) => {
+                    const Icon = step.icon;
+                    const isActive = currentStep === step.id;
+                    const isCompleted = isStepComplete(step.id);
+                    const isPast = currentStep > step.id;
+                    
+                    return (
+                      <div key={step.id} className="flex items-center">
+                        <button
+                          onClick={() => goToStep(step.id)}
+                          className={`flex flex-col items-center transition-all duration-200 ${
+                            isActive || isPast
+                              ? 'text-forest-600'
+                              : 'text-forest-300'
+                          }`}
+                        >
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 ${
+                            isActive
+                              ? 'bg-forest-600 text-white shadow-lg scale-110'
+                              : isCompleted
+                              ? 'bg-forest-100 text-forest-600 border-2 border-forest-300'
+                              : 'bg-cream-100 text-forest-400 border-2 border-cream-200'
+                          }`}>
+                            {isCompleted && !isActive ? (
+                              <CheckCircle2 className="w-6 h-6" />
+                            ) : (
+                              <Icon className="w-5 h-5" />
+                            )}
+                          </div>
+                          <span className="text-xs font-medium mt-2">{step.title}</span>
+                        </button>
+                        {index < steps.length - 1 && (
+                          <div className={`flex-1 h-0.5 mx-4 transition-colors duration-200 ${
+                            isPast ? 'bg-forest-300' : 'bg-cream-200'
+                          }`} />
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">Reject (butir)</Label>
-                  <Input type="number" placeholder="0" className="h-12 md:h-11" value={reject} onChange={(e) => setReject(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">Keterangan</Label>
-                  <Input placeholder="-" className="h-12 md:h-11" value={keterangan} onChange={(e) => setKeterangan(e.target.value)} />
-                </div>
-              </div>
 
-              <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                <Button className="bg-primary hover:bg-primary/90 h-12 md:h-11" onClick={handleSimpanInput}>
-                  <Save className="h-4 w-4 mr-2" />
-                  Simpan Input
-                </Button>
-                <p className="text-xs text-muted-foreground self-center">
-                  Shortcut: Ctrl+S (Save) | Ctrl+E (Export Excel) | Ctrl+P (Export PDF)
-                </p>
+                {/* Step Content */}
+                <div className="min-h-[400px]">
+                  {currentStep === 1 && (
+                    <div className="space-y-6">
+                      <div className="text-center mb-6">
+                        <Users className="w-12 h-12 text-forest-600 mx-auto mb-3" />
+                        <h3 className="text-lg font-semibold text-forest-700">Data Populasi Ayam</h3>
+                        <p className="text-sm text-forest-500">Masukkan usia dan jumlah ayam hari ini</p>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-semibold text-forest-700">Tanggal Laporan</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-12 bg-white border-forest-200 hover:bg-cream-50 rounded-xl", !inputDate && "text-forest-400")}>
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {inputDate ? format(inputDate, "dd-MMM-yy") : <span>Pilih tanggal</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar mode="single" selected={inputDate} onSelect={setInputDate} initialFocus className="p-3 pointer-events-auto" />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label className="text-sm font-semibold text-forest-700">Usia Ayam (Minggu)</Label>
+                          <Input 
+                            type="number" 
+                            placeholder="0" 
+                            className="h-12 bg-white border-forest-200 hover:bg-cream-50 rounded-xl" 
+                            value={usia} 
+                            onChange={(e) => setUsia(e.target.value)} 
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label className="text-sm font-semibold text-forest-700">Jumlah Ayam (ekor)</Label>
+                          <Input 
+                            type="number" 
+                            placeholder="0" 
+                            className="h-12 bg-white border-forest-200 hover:bg-cream-50 rounded-xl" 
+                            value={jumlahAyam} 
+                            onChange={(e) => setJumlahAyam(e.target.value)} 
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label className="text-sm font-semibold text-forest-700">Kematian (ekor)</Label>
+                          <Input 
+                            type="number" 
+                            placeholder="0" 
+                            className="h-12 bg-white border-forest-200 hover:bg-cream-50 rounded-xl" 
+                            value={kematian} 
+                            onChange={(e) => setKematian(e.target.value)} 
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label className="text-sm font-semibold text-forest-700">Jual Ayam (ekor)</Label>
+                          <Input 
+                            type="number" 
+                            placeholder="0" 
+                            className="h-12 bg-white border-forest-200 hover:bg-cream-50 rounded-xl" 
+                            value={jualAyam} 
+                            onChange={(e) => setJualAyam(e.target.value)} 
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {currentStep === 2 && (
+                    <div className="space-y-6">
+                      <div className="text-center mb-6">
+                        <Package className="w-12 h-12 text-forest-600 mx-auto mb-3" />
+                        <h3 className="text-lg font-semibold text-forest-700">Data Pakan</h3>
+                        <p className="text-sm text-forest-500">Masukkan konsumsi pakan hari ini</p>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-semibold text-forest-700">Total Pakan (kg)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0"
+                            className="h-12 bg-white border-forest-200 hover:bg-cream-50 rounded-xl"
+                            value={totalPakan}
+                            onChange={(e) => setTotalPakan(e.target.value)}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label className="text-sm font-semibold text-forest-700">Vitamin/Obat/Vaksin</Label>
+                          <Input 
+                            placeholder="-" 
+                            className="h-12 bg-white border-forest-200 hover:bg-cream-50 rounded-xl" 
+                            value={vitaminObat} 
+                            onChange={(e) => setVitaminObat(e.target.value)} 
+                          />
+                        </div>
+                      </div>
+
+                      {/* Auto-calculated feed breakdown */}
+                      {parseFloat(totalPakan) > 0 && activeFormula && (
+                        <div className="bg-gradient-to-r from-forest-50 to-cream-50 border border-forest-200 rounded-[24px] p-6">
+                          <p className="text-sm font-semibold text-forest-700 mb-4">Breakdown Pakan Otomatis</p>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="text-center">
+                              <div className="w-16 h-16 bg-yellow-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                                <Package className="w-8 h-8 text-yellow-600" />
+                              </div>
+                              <p className="text-sm text-forest-600 mb-1">Jagung ({activeFormula.corn_pct}%)</p>
+                              <p className="text-xl font-bold text-forest-700">{cornKg} kg</p>
+                            </div>
+                            <div className="text-center">
+                              <div className="w-16 h-16 bg-orange-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                                <Package className="w-8 h-8 text-orange-600" />
+                              </div>
+                              <p className="text-sm text-forest-600 mb-1">Konsentrat ({activeFormula.concentrate_pct}%)</p>
+                              <p className="text-xl font-bold text-forest-700">{concKg} kg</p>
+                            </div>
+                            <div className="text-center">
+                              <div className="w-16 h-16 bg-amber-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                                <Package className="w-8 h-8 text-amber-600" />
+                              </div>
+                              <p className="text-sm text-forest-600 mb-1">Dedak ({activeFormula.bran_pct}%)</p>
+                              <p className="text-xl font-bold text-forest-700">{branKg} kg</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {currentStep === 3 && (
+                    <div className="space-y-6">
+                      <div className="text-center mb-6">
+                        <TrendingUp className="w-12 h-12 text-forest-600 mx-auto mb-3" />
+                        <h3 className="text-lg font-semibold text-forest-700">Data Produksi</h3>
+                        <p className="text-sm text-forest-500">Masukkan hasil produksi telur hari ini</p>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-semibold text-forest-700">Produksi Telur (Butir)</Label>
+                          <Input 
+                            type="number" 
+                            placeholder="0" 
+                            className="h-12 bg-white border-forest-200 hover:bg-cream-50 rounded-xl" 
+                            value={prodButir} 
+                            onChange={(e) => setProdButir(e.target.value)} 
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label className="text-sm font-semibold text-forest-700">Telur Reject (Butir)</Label>
+                          <Input 
+                            type="number" 
+                            placeholder="0" 
+                            className="h-12 bg-white border-forest-200 hover:bg-cream-50 rounded-xl" 
+                            value={reject} 
+                            onChange={(e) => setReject(e.target.value)} 
+                          />
+                        </div>
+                        
+                        <div className="md:col-span-2 space-y-2">
+                          <Label className="text-sm font-semibold text-forest-700">Keterangan</Label>
+                          <Input 
+                            placeholder="Catatan tambahan..." 
+                            className="h-12 bg-white border-forest-200 hover:bg-cream-50 rounded-xl" 
+                            value={keterangan} 
+                            onChange={(e) => setKeterangan(e.target.value)} 
+                          />
+                        </div>
+                      </div>
+
+                      {/* Production Summary */}
+                      {prodButir && (
+                        <div className="bg-gradient-to-r from-emerald-50 to-cream-50 border border-emerald-200 rounded-[24px] p-6">
+                          <p className="text-sm font-semibold text-emerald-700 mb-4">Ringkasan Produksi</p>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="text-center">
+                              <p className="text-2xl font-bold text-emerald-700">{prodButir}</p>
+                              <p className="text-sm text-emerald-600">Total Telur</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-2xl font-bold text-emerald-700">{reject || 0}</p>
+                              <p className="text-sm text-emerald-600">Reject</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-2xl font-bold text-emerald-700">
+                                {jumlahAyam ? ((parseFloat(prodButir) / parseFloat(jumlahAyam)) * 100).toFixed(1) : 0}%
+                              </p>
+                              <p className="text-sm text-emerald-600">Produktivitas</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {currentStep === 4 && (
+                    <div className="space-y-6">
+                      <div className="text-center mb-6">
+                        <CheckCircle2 className="w-12 h-12 text-forest-600 mx-auto mb-3" />
+                        <h3 className="text-lg font-semibold text-forest-700">Konfirmasi Data</h3>
+                        <p className="text-sm text-forest-500">Periksa kembali data sebelum menyimpan</p>
+                      </div>
+                      
+                      <div className="bg-white rounded-[24px] border border-cream-100 p-6 space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-3">
+                            <h4 className="font-semibold text-forest-700">Data Populasi</h4>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-forest-500">Tanggal:</span>
+                                <span className="font-medium text-forest-700">{formatTanggal()}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-forest-500">Usia:</span>
+                                <span className="font-medium text-forest-700">{usia} minggu</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-forest-500">Jumlah Ayam:</span>
+                                <span className="font-medium text-forest-700">{jumlahAyam} ekor</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-forest-500">Kematian:</span>
+                                <span className="font-medium text-forest-700">{kematian || 0} ekor</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-3">
+                            <h4 className="font-semibold text-forest-700">Data Produksi</h4>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-forest-500">Total Pakan:</span>
+                                <span className="font-medium text-forest-700">{totalPakan} kg</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-forest-500">Produksi Telur:</span>
+                                <span className="font-medium text-forest-700">{prodButir} butir</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-forest-500">Reject:</span>
+                                <span className="font-medium text-forest-700">{reject || 0} butir</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-forest-500">Produktivitas:</span>
+                                <span className="font-medium text-forest-700">
+                                  {jumlahAyam && prodButir ? ((parseFloat(prodButir) / parseFloat(jumlahAyam)) * 100).toFixed(1) : 0}%
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {keterangan && (
+                          <div className="pt-3 border-t border-cream-200">
+                            <h4 className="font-semibold text-forest-700 mb-2">Keterangan</h4>
+                            <p className="text-sm text-forest-600">{keterangan}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Sticky Bottom Navigation */}
+                <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-cream-200 p-4 safe-area-padding-bottom z-50">
+                  <div className="max-w-6xl mx-auto flex items-center justify-between">
+                    <Button
+                      variant="outline"
+                      onClick={prevStep}
+                      disabled={currentStep === 1}
+                      className="h-12 px-6 rounded-xl border-forest-200 hover:bg-cream-50"
+                    >
+                      Sebelumnya
+                    </Button>
+                    
+                    <div className="flex items-center space-x-2">
+                      {steps.map((step) => (
+                        <div
+                          key={step.id}
+                          className={`w-2 h-2 rounded-full transition-colors duration-200 ${
+                            currentStep === step.id
+                              ? 'bg-forest-600'
+                              : isStepComplete(step.id)
+                              ? 'bg-forest-300'
+                              : 'bg-cream-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    
+                    {currentStep === steps.length ? (
+                      <Button
+                        onClick={handleSimpanInput}
+                        className="h-12 px-8 bg-forest-600 hover:bg-forest-700 text-white rounded-xl shadow-lg"
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        Simpan Data
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={nextStep}
+                        className="h-12 px-6 bg-forest-600 hover:bg-forest-700 text-white rounded-xl shadow-lg"
+                      >
+                        Lanjut
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
             </TabsContent>
           )}
 

@@ -13,6 +13,7 @@ interface AuthContextType {
   loading: boolean;
   role: AppRole | null;
   roleLoading: boolean;
+  signIn: (username: string, password: string) => Promise<boolean>;
   setUserRole: (nextRole: AppRole) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   role: null,
   roleLoading: true,
+  signIn: async () => false,
   setUserRole: async () => {},
   signOut: async () => {},
 });
@@ -30,19 +32,55 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  console.log("=== AUTH PROVIDER INITIALIZING ===");
+  
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [baseRole, setBaseRole] = useState<AppRole | null>(null);
   const [roleOverride, setRoleOverride] = useState<AppRole | null>(() => {
     const stored = localStorage.getItem("candra-role-override");
+    console.log("Stored role override:", stored);
     return stored === "owner" || stored === "worker" ? stored : null;
   });
   const [roleLoading, setRoleLoading] = useState(true);
 
   useEffect(() => {
+    console.log("=== AUTH EFFECT RUNNING ===");
+    
+    // Check local auth first for PWA/Mobile
+    const storedAuth = localStorage.getItem("candra-auth-user");
+    console.log("Stored auth:", storedAuth);
+    
+    if (storedAuth) {
+      try {
+        const { username, role } = JSON.parse(storedAuth);
+        console.log("Restoring user:", username, "with role:", role);
+        const mockUser = {
+          id: username,
+          email: `${username}@candra.farm`,
+          aud: "authenticated",
+          role: "authenticated",
+          created_at: new Date().toISOString(),
+          app_metadata: {},
+          user_metadata: {},
+        } as User;
+        setUser(mockUser);
+        setBaseRole(role);
+        setRoleOverride(role);
+        setLoading(false);
+        setRoleLoading(false);
+        return;
+      } catch (e) {
+        console.error("Error parsing stored auth:", e);
+        localStorage.removeItem("candra-auth-user");
+      }
+    }
+
+    // Fallback to Supabase auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
+        console.log("Supabase auth state changed:", _event, session);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -50,8 +88,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Supabase session:", session);
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
+    }).catch(err => {
+      console.error("Supabase error:", err);
       setLoading(false);
     });
 
@@ -109,14 +151,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, baseRole, roleOverride, setUserRole]);
 
+  const signIn = useCallback(async (username: string, password: string): Promise<boolean> => {
+    // Simple local authentication for demo
+    const validCredentials = [
+      { username: "owner", password: "owner123", role: "owner" as AppRole },
+      { username: "worker", password: "worker123", role: "worker" as AppRole },
+    ];
+
+    const credential = validCredentials.find(
+      (c) => c.username === username && c.password === password
+    );
+
+    if (credential) {
+      // Store auth in localStorage for PWA/Mobile
+      localStorage.setItem("candra-auth-user", JSON.stringify({ username, role: credential.role }));
+      localStorage.setItem("candra-role-override", credential.role);
+      setRoleOverride(credential.role);
+      setBaseRole(credential.role);
+      
+      // Create a mock user object
+      const mockUser = {
+        id: username,
+        email: `${username}@candra.farm`,
+        aud: "authenticated",
+        role: "authenticated",
+        created_at: new Date().toISOString(),
+        app_metadata: {},
+        user_metadata: {},
+      } as User;
+      
+      setUser(mockUser);
+      return true;
+    }
+
+    return false;
+  }, []);
+
   const signOut = async () => {
+    localStorage.removeItem("candra-auth-user");
+    localStorage.removeItem("candra-role-override");
+    setUser(null);
+    setSession(null);
+    setRoleOverride(null);
+    setBaseRole(null);
     await supabase.auth.signOut();
   };
 
   const role = roleOverride ?? baseRole;
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, role, roleLoading, setUserRole, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, role, roleLoading, signIn, setUserRole, signOut }}>
       {children}
     </AuthContext.Provider>
   );

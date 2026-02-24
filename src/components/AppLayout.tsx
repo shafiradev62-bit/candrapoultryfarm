@@ -1,9 +1,10 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Bell, ClipboardList, Landmark, LayoutDashboard, Settings, ShoppingCart, Warehouse, Wrench } from "lucide-react";
+import { Bell, ClipboardList, Landmark, LayoutDashboard, Settings, ShoppingCart, Warehouse, Wrench, Home, TrendingUp, Package, DollarSign, Cog } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -15,18 +16,16 @@ export function AppLayout({ children, title }: AppLayoutProps) {
   const isWorker = role !== "owner";
   const bottomModules = isWorker
     ? [
-      { title: "Daily", url: "/daily-report", icon: ClipboardList },
-      { title: "Inventory", url: "/warehouse", icon: Warehouse },
-    ]
+        { title: "Daily", url: "/daily-report", icon: ClipboardList, color: "text-forest-600" },
+        { title: "Inventory", url: "/warehouse", icon: Warehouse, color: "text-forest-600" },
+      ]
     : [
-      { title: "Dashboard", url: "/", icon: LayoutDashboard },
-      { title: "Daily", url: "/daily-report", icon: ClipboardList },
-      { title: "Warehouse", url: "/warehouse", icon: Warehouse },
-      { title: "Sales", url: "/penjualan", icon: ShoppingCart },
-      { title: "Finance", url: "/finance", icon: Landmark },
-      { title: "Ops", url: "/operasional", icon: Wrench },
-      { title: "Settings", url: "/pengaturan", icon: Settings },
-    ];
+        { title: "Home", url: "/", icon: Home, color: "text-forest-600" },
+        { title: "Daily", url: "/daily-report", icon: ClipboardList, color: "text-forest-600" },
+        { title: "Inventory", url: "/warehouse", icon: Warehouse, color: "text-forest-600" },
+        { title: "Sales", url: "/penjualan", icon: ShoppingCart, color: "text-forest-600" },
+        { title: "Finance", url: "/finance", icon: DollarSign, color: "text-forest-600" },
+      ];
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
@@ -52,20 +51,36 @@ export function AppLayout({ children, title }: AppLayoutProps) {
             {children}
           </main>
         </div>
-        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-card md:hidden">
-          <div className="flex items-center justify-around px-2 py-2">
-            {bottomModules.map((item) => (
-              <NavLink
-                key={item.title}
-                to={item.url}
-                end={item.url === "/"}
-                className="flex flex-col items-center justify-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground"
-                activeClassName="text-primary"
-              >
-                <item.icon className="h-5 w-5" />
-                <span>{item.title}</span>
-              </NavLink>
-            ))}
+        <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
+          <div className="bg-white/95 backdrop-blur-lg border-t border-cream-200 safe-area-padding-bottom">
+            <div className="flex items-center justify-around px-4 py-2">
+              {bottomModules.map((item, index) => {
+                const isActive = window.location.pathname === item.url;
+                return (
+                  <NavLink
+                    key={item.title}
+                    to={item.url}
+                    className="flex flex-col items-center justify-center gap-1.5 rounded-2xl px-4 py-2.5 transition-all duration-200 hover:bg-cream-50 group"
+                  >
+                    <div className={cn(
+                      "relative transition-all duration-200",
+                      isActive ? "text-forest-600" : "text-forest-400 group-hover:text-forest-600"
+                    )}>
+                      <item.icon className="h-6 w-6" />
+                      {isActive && (
+                        <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-forest-600 rounded-full" />
+                      )}
+                    </div>
+                    <span className={cn(
+                      "text-xs font-medium transition-all duration-200",
+                      isActive ? "text-forest-600 font-semibold" : "text-forest-400 group-hover:text-forest-600"
+                    )}>
+                      {item.title}
+                    </span>
+                  </NavLink>
+                );
+              })}
+            </div>
           </div>
         </nav>
       </div>

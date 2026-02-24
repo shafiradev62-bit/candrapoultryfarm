@@ -18,70 +18,94 @@ export default {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       colors: {
+        // Custom Forest Green and Warm Cream palette
+        forest: {
+          50: "#F0F4F1",
+          100: "#D7E3DC", 
+          200: "#B8CFC4",
+          300: "#8FB39F",
+          400: "#6B9473",
+          500: "#40916C", // Secondary
+          600: "#2D6A4F",
+          700: "#1B4332", // Primary
+          800: "#152D1A",
+          900: "#0F1F14",
+        },
+        cream: {
+          50: "#FFFEFA",
+          100: "#FDFCF7", // Background
+          200: "#FBF8F0",
+          300: "#F8F3E8",
+          400: "#F4EADC",
+          500: "#F0E0CE",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        background: "#FDFCF7", // Warm Cream
+        foreground: "#1B4332", // Forest Green
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "#1B4332", // Deep Forest Green
+          foreground: "#FFFFFF",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "#40916C", // Sage Green
+          foreground: "#FFFFFF",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "#DC2626",
+          foreground: "#FFFFFF",
         },
         warning: {
-          DEFAULT: "hsl(var(--warning))",
-          foreground: "hsl(var(--warning-foreground))",
+          DEFAULT: "#F59E0B",
+          foreground: "#FFFFFF",
         },
         success: {
-          DEFAULT: "hsl(var(--success))",
-          foreground: "hsl(var(--success-foreground))",
+          DEFAULT: "#10B981",
+          foreground: "#FFFFFF",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "#F8F3E8",
+          foreground: "#6B9473",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "#8FB39F",
+          foreground: "#1B4332",
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+          DEFAULT: "#FFFFFF",
+          foreground: "#1B4332",
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: "#FFFFFF",
+          foreground: "#1B4332",
         },
         sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
-          muted: "hsl(var(--sidebar-muted))",
+          DEFAULT: "#FFFFFF",
+          foreground: "#1B4332",
+          primary: "#1B4332",
+          "primary-foreground": "#FFFFFF",
+          accent: "#F8F3E8",
+          "accent-foreground": "#1B4332",
+          border: "#E5E7EB",
+          ring: "#1B4332",
+          muted: "#F8F3E8",
         },
         chart: {
-          "1": "hsl(var(--chart-1))",
-          "2": "hsl(var(--chart-2))",
-          "3": "hsl(var(--chart-3))",
-          "4": "hsl(var(--chart-4))",
-          "5": "hsl(var(--chart-5))",
+          "1": "#1B4332",
+          "2": "#40916C", 
+          "3": "#8FB39F",
+          "4": "#B8CFC4",
+          "5": "#D7E3DC",
         },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "20px",
+        "2xl": "24px",
+        "3xl": "32px",
       },
       keyframes: {
         "accordion-down": {

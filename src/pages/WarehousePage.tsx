@@ -2,6 +2,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,7 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Download, Plus, Trash2, Pencil, CalendarIcon, Save, Upload, Minus, Search, Filter, TrendingDown, TrendingUp, AlertTriangle } from "lucide-react";
+import { Download, Plus, Trash2, Pencil, CalendarIcon, Save, Upload, Minus, Search, Filter, TrendingDown, TrendingUp, AlertTriangle, Package, BarChart3, ArrowUpRight, ArrowDownRight, CheckCircle2 } from "lucide-react";
 import { exportToExcel } from "@/lib/exportExcel";
 import { useToast } from "@/hooks/use-toast";
 import { useAppData, type WarehouseRow } from "@/contexts/AppDataContext";
@@ -77,6 +78,28 @@ const WarehousePage = () => {
   
   // State for quick reduction presets
   const [quickReductionOpen, setQuickReductionOpen] = useState(false);
+
+  // Quick add presets for chips
+  const quickAddPresets = [
+    { label: "+10 kg", value: 10, color: "bg-forest-100 text-forest-700 border-forest-200" },
+    { label: "+25 kg", value: 25, color: "bg-forest-100 text-forest-700 border-forest-200" },
+    { label: "+50 kg", value: 50, color: "bg-forest-100 text-forest-700 border-forest-200" },
+    { label: "+100 kg", value: 100, color: "bg-forest-100 text-forest-700 border-forest-200" },
+  ];
+
+  const handleQuickAdd = (type: 'jagung' | 'konsentrat' | 'dedak', amount: number) => {
+    switch (type) {
+      case 'jagung':
+        setAddJagung(prev => (parseFloat(prev) || 0 + amount).toString());
+        break;
+      case 'konsentrat':
+        setAddKonsentrat(prev => (parseFloat(prev) || 0 + amount).toString());
+        break;
+      case 'dedak':
+        setAddDedak(prev => (parseFloat(prev) || 0 + amount).toString());
+        break;
+    }
+  };
 
   const handleBackupData = () => {
     const backup = {
@@ -402,215 +425,391 @@ const WarehousePage = () => {
 
   return (
     <AppLayout title="Warehouse">
-      <div className="p-4 lg:p-6">
-      <div className="space-y-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h1 className="text-lg font-semibold text-primary">Stok Gudang</h1>
-            <p className="text-sm text-muted-foreground">Monitoring stok bahan pakan & produk telur</p>
+      <div className="min-h-screen bg-gradient-to-br from-cream-100 to-cream-50 safe-area-padding">
+        <div className="p-4 lg:p-6 max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-6">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-bold text-forest-700 mb-1">Stok Gudang</h1>
+                <p className="text-forest-500">Monitoring bahan pakan & produk telur</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="border-forest-200 text-forest-600">
+                  {role === "owner" ? "Owner" : "Worker"}
+                </Badge>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" className="border-primary/30" onClick={handleExport}>
-              <Download className="h-4 w-4 mr-2" />
-              Export to Excel
-            </Button>
-            <Button variant="outline" className="border-primary/30" onClick={handleBackupData}>
-              <Save className="h-4 w-4 mr-2" />
-              Backup Data
-            </Button>
-            <input
-              type="file"
-              ref={restoreInputRef}
-              accept=".json"
-              style={{ display: "none" }}
-              onChange={handleRestoreData}
-            />
-            <Button variant="outline" className="border-primary/30" onClick={() => restoreInputRef.current?.click()} disabled={isWorker}>
-              <Upload className="h-4 w-4 mr-2" />
-              Restore Data
-            </Button>
-          </div>
-        </div>
 
-        <Tabs defaultValue="stok" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="stok">Stok Gudang</TabsTrigger>
-            <TabsTrigger value="pengurangan">Pengurangan Stok Telur</TabsTrigger>
-          </TabsList>
+          <Tabs defaultValue="stok" className="space-y-6">
+            <TabsList className="bg-white border border-cream-200 rounded-xl p-1">
+              <TabsTrigger value="stok" className="data-[state=active]:bg-forest-600 data-[state=active]:text-white rounded-lg">
+                <Package className="w-4 h-4 mr-2" />
+                Stok Gudang
+              </TabsTrigger>
+              <TabsTrigger value="pengurangan" className="data-[state=active]:bg-forest-600 data-[state=active]:text-white rounded-lg">
+                <TrendingDown className="w-4 h-4 mr-2" />
+                Pengurangan Telur
+              </TabsTrigger>
+            </TabsList>
           
-          <TabsContent value="stok" className="space-y-6">
-            <div className="flex justify-end">
-              <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-primary hover:bg-primary/90" disabled={isWorker}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Tambah Stok
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Tambah Stok Gudang</DialogTitle>
-                </DialogHeader>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2 md:col-span-2">
-                    <Label>Tanggal</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Btn variant="outline" className={cn("w-full justify-start text-left font-normal h-12 md:h-10", !tanggal && "text-muted-foreground")}>
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {tanggal ? format(tanggal, "dd-MMM-yy") : <span>Pilih tanggal</span>}
-                        </Btn>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={tanggal} onSelect={setTanggal} initialFocus className="p-3 pointer-events-auto" />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Tambah Jagung (kg)</Label>
-                    <Input type="number" value={addJagung} onChange={(e) => setAddJagung(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Tambah Konsentrat (kg)</Label>
-                    <Input type="number" value={addKonsentrat} onChange={(e) => setAddKonsentrat(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Tambah Dedak (kg)</Label>
-                    <Input type="number" value={addDedak} onChange={(e) => setAddDedak(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Telur (Butir)</Label>
-                    <Input type="number" value={telurButir} onChange={(e) => setTelurButir(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Telur (Tray)</Label>
-                    <Input type="number" value={telurTray} onChange={(e) => setTelurTray(e.target.value)} />
-                  </div>
+            <TabsContent value="stok" className="space-y-6">
+              {/* Action Bar */}
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                <div className="flex flex-wrap gap-2">
+                  <Dialog open={open} onOpenChange={setOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-forest-600 hover:bg-forest-700 text-white rounded-xl shadow-md" disabled={isWorker}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Tambah Stok
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="rounded-[24px] max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle className="text-forest-700">Tambah Stok Gudang</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-semibold text-forest-700">Tanggal</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Btn variant="outline" className={cn("w-full justify-start text-left font-normal h-12 bg-white border-forest-200 hover:bg-cream-50 rounded-xl", !tanggal && "text-forest-400")}>
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {tanggal ? format(tanggal, "dd-MMM-yy") : <span>Pilih tanggal</span>}
+                              </Btn>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar mode="single" selected={tanggal} onSelect={setTanggal} initialFocus className="p-3 pointer-events-auto" />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+
+                        {/* Quick Add Chips */}
+                        <div className="space-y-4">
+                          <div>
+                            <Label className="text-sm font-semibold text-forest-700 mb-3 block">Quick Add - Jagung</Label>
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              {quickAddPresets.map((preset) => (
+                                <button
+                                  key={preset.value}
+                                  onClick={() => handleQuickAdd('jagung', preset.value)}
+                                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 hover:scale-105 ${preset.color}`}
+                                >
+                                  {preset.label}
+                                </button>
+                              ))}
+                            </div>
+                            <Input 
+                              type="number" 
+                              placeholder="0" 
+                              className="h-12 bg-white border-forest-200 hover:bg-cream-50 rounded-xl" 
+                              value={addJagung} 
+                              onChange={(e) => setAddJagung(e.target.value)} 
+                            />
+                          </div>
+
+                          <div>
+                            <Label className="text-sm font-semibold text-forest-700 mb-3 block">Quick Add - Konsentrat</Label>
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              {quickAddPresets.map((preset) => (
+                                <button
+                                  key={preset.value}
+                                  onClick={() => handleQuickAdd('konsentrat', preset.value)}
+                                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 hover:scale-105 ${preset.color}`}
+                                >
+                                  {preset.label}
+                                </button>
+                              ))}
+                            </div>
+                            <Input 
+                              type="number" 
+                              placeholder="0" 
+                              className="h-12 bg-white border-forest-200 hover:bg-cream-50 rounded-xl" 
+                              value={addKonsentrat} 
+                              onChange={(e) => setAddKonsentrat(e.target.value)} 
+                            />
+                          </div>
+
+                          <div>
+                            <Label className="text-sm font-semibold text-forest-700 mb-3 block">Quick Add - Dedak</Label>
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              {quickAddPresets.map((preset) => (
+                                <button
+                                  key={preset.value}
+                                  onClick={() => handleQuickAdd('dedak', preset.value)}
+                                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 hover:scale-105 ${preset.color}`}
+                                >
+                                  {preset.label}
+                                </button>
+                              ))}
+                            </div>
+                            <Input 
+                              type="number" 
+                              placeholder="0" 
+                              className="h-12 bg-white border-forest-200 hover:bg-cream-50 rounded-xl" 
+                              value={addDedak} 
+                              onChange={(e) => setAddDedak(e.target.value)} 
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label className="text-sm font-semibold text-forest-700">Telur (Butir)</Label>
+                              <Input 
+                                type="number" 
+                                placeholder="0" 
+                                className="h-12 bg-white border-forest-200 hover:bg-cream-50 rounded-xl" 
+                                value={telurButir} 
+                                onChange={(e) => setTelurButir(e.target.value)} 
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-sm font-semibold text-forest-700">Telur (Tray)</Label>
+                              <Input 
+                                type="number" 
+                                placeholder="0" 
+                                className="h-12 bg-white border-forest-200 hover:bg-cream-50 rounded-xl" 
+                                value={telurTray} 
+                                onChange={(e) => setTelurTray(e.target.value)} 
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button onClick={handleTambahStok} className="bg-forest-600 hover:bg-forest-700 text-white rounded-xl">
+                          Simpan
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </div>
-                <DialogFooter>
-                  <Button onClick={handleTambahStok} className="bg-primary hover:bg-primary/90">
-                    Simpan
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
 
-          {/* Current Stock Summary */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
-          <div className={cn("bg-card rounded-lg border p-4", currentStock.stokJagung < 100 && "border-destructive border-2")}>
-            <p className="text-xs text-muted-foreground">Jagung</p>
-            <p className={cn("text-xl font-semibold", currentStock.stokJagung < 100 ? "text-destructive" : "text-primary")}>
-              {currentStock.stokJagung.toLocaleString("id-ID")} kg
-            </p>
-            {currentStock.stokJagung < 100 && (
-              <p className="text-xs text-destructive mt-1">⚠️ Stok menipis!</p>
-            )}
-          </div>
-          <div className={cn("bg-card rounded-lg border p-4", currentStock.stokKonsentrat < 70 && "border-destructive border-2")}>
-            <p className="text-xs text-muted-foreground">Konsentrat</p>
-            <p className={cn("text-xl font-semibold", currentStock.stokKonsentrat < 70 ? "text-destructive" : "text-primary")}>
-              {currentStock.stokKonsentrat.toLocaleString("id-ID")} kg
-            </p>
-            {currentStock.stokKonsentrat < 70 && (
-              <p className="text-xs text-destructive mt-1">⚠️ Stok menipis!</p>
-            )}
-          </div>
-          <div className={cn("bg-card rounded-lg border p-4", currentStock.stokDedak < 50 && "border-destructive border-2")}>
-            <p className="text-xs text-muted-foreground">Dedak</p>
-            <p className={cn("text-xl font-semibold", currentStock.stokDedak < 50 ? "text-destructive" : "text-primary")}>
-              {currentStock.stokDedak.toLocaleString("id-ID")} kg
-            </p>
-            {currentStock.stokDedak < 50 && (
-              <p className="text-xs text-destructive mt-1">⚠️ Stok menipis!</p>
-            )}
-          </div>
-          <div className="bg-card rounded-lg border p-4">
-            <p className="text-xs text-muted-foreground">Telur (Butir)</p>
-            <p className="text-xl font-semibold text-primary">{currentStock.telurButir.toLocaleString("id-ID")}</p>
-          </div>
-          <div className="bg-card rounded-lg border p-4">
-            <p className="text-xs text-muted-foreground">Telur (Tray)</p>
-            <p className="text-xl font-semibold text-primary">{currentStock.telurTray}</p>
-          </div>
-        </div>
-        
-        {/* Search and Filter Section */}
-        <div className="bg-card rounded-lg border p-4 space-y-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Cari berdasarkan tanggal atau nomor..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleExport} className="border-forest-200 hover:bg-cream-50 rounded-xl">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export
+                  </Button>
+                  <Button variant="outline" onClick={handleBackupData} className="border-forest-200 hover:bg-cream-50 rounded-xl">
+                    <Save className="h-4 w-4 mr-2" />
+                    Backup
+                  </Button>
+                </div>
               </div>
+
+              {/* Current Stock Summary with Visual Capacity Bars */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {(() => {
+                  const currentStock = warehouseEntries.length > 0 ? warehouseEntries[warehouseEntries.length - 1] : {
+                    stokJagung: 0,
+                    stokKonsentrat: 0,
+                    stokDedak: 0,
+                    telurButir: 0,
+                    telurTray: 0
+                  };
+                  
+                  const stockItems = [
+                    {
+                      name: 'Jagung',
+                      current: currentStock.stokJagung,
+                      capacity: 1000,
+                      unit: 'kg',
+                      color: 'yellow',
+                      icon: '🌽'
+                    },
+                    {
+                      name: 'Konsentrat',
+                      current: currentStock.stokKonsentrat,
+                      capacity: 1000,
+                      unit: 'kg',
+                      color: 'orange',
+                      icon: '🥄'
+                    },
+                    {
+                      name: 'Dedak',
+                      current: currentStock.stokDedak,
+                      capacity: 1000,
+                      unit: 'kg',
+                      color: 'amber',
+                      icon: '🌾'
+                    }
+                  ];
+                  
+                  return stockItems.map((item) => {
+                    const percentage = Math.min((item.current / item.capacity) * 100, 100);
+                    const isLow = percentage < 20;
+                    const isMedium = percentage >= 20 && percentage < 50;
+                    const isHigh = percentage >= 50;
+                    
+                    return (
+                      <div key={item.name} className="bg-white rounded-[24px] shadow-md border border-cream-100 p-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center space-x-3">
+                            <div className="text-2xl">{item.icon}</div>
+                            <div>
+                              <h3 className="font-semibold text-forest-700">{item.name}</h3>
+                              <p className="text-sm text-forest-500">
+                                {item.current.toLocaleString('id-ID')} / {item.capacity} {item.unit}
+                              </p>
+                            </div>
+                          </div>
+                          <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            isLow ? 'bg-red-100 text-red-700' :
+                            isMedium ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-green-100 text-green-700'
+                          }`}>
+                            {isLow ? 'Rendah' : isMedium ? 'Sedang' : 'Aman'}
+                          </div>
+                        </div>
+                        
+                        {/* Visual Capacity Bar */}
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-xs text-forest-500">
+                            <span>Kapasitas</span>
+                            <span>{percentage.toFixed(1)}%</span>
+                          </div>
+                          <div className="w-full bg-cream-200 rounded-full h-3 overflow-hidden">
+                            <div 
+                              className={`h-full transition-all duration-500 rounded-full ${
+                                isLow ? 'bg-red-500' :
+                                isMedium ? 'bg-yellow-500' :
+                                'bg-green-500'
+                              }`}
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-forest-400">
+                            <span>0 {item.unit}</span>
+                            <span>{item.capacity} {item.unit}</span>
+                          </div>
+                        </div>
+                        
+                        {isLow && (
+                          <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded-xl">
+                            <p className="text-xs text-red-700 font-medium flex items-center">
+                              <AlertTriangle className="w-3 h-3 mr-1" />
+                              Stok menipis! Segera lakukan pemesanan.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
+                
+                {/* Egg Stock Card */}
+                {(() => {
+                  const currentStock = warehouseEntries.length > 0 ? warehouseEntries[warehouseEntries.length - 1] : {
+                    telurButir: 0,
+                    telurTray: 0
+                  };
+                  
+                  return (
+                    <div className="bg-gradient-to-br from-emerald-50 to-cream-50 rounded-[24px] shadow-md border border-emerald-200 p-6 lg:col-span-3">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+                            <span className="text-xl">🥚</span>
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-emerald-700">Stok Telur</h3>
+                            <p className="text-sm text-emerald-600">Produksi hari ini</p>
+                          </div>
+                        </div>
+                        <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center p-4 bg-white rounded-xl">
+                          <p className="text-2xl font-bold text-emerald-700">
+                            {currentStock.telurButir.toLocaleString('id-ID')}
+                          </p>
+                          <p className="text-sm text-emerald-600">Butir</p>
+                        </div>
+                        <div className="text-center p-4 bg-white rounded-xl">
+                          <p className="text-2xl font-bold text-emerald-700">
+                            {currentStock.telurTray.toLocaleString('id-ID')}
+                          </p>
+                          <p className="text-sm text-emerald-600">Tray</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+          <div className="bg-white rounded-[24px] shadow-md border border-cream-100 p-6">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-forest-400" />
+                  <Input
+                    placeholder="Cari berdasarkan tanggal atau nomor..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 h-12 bg-white border-forest-200 hover:bg-cream-50 rounded-xl"
+                  />
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="border-forest-200 hover:bg-cream-50 rounded-xl h-12"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filter
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="border-primary/30"
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              {showFilters ? "Sembunyikan" : "Tampilkan"} Filter
-            </Button>
+            
+            {showFilters && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-cream-200">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-forest-700">Dari Tanggal</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Btn variant="outline" className={cn("w-full justify-start text-left font-normal h-12 bg-white border-forest-200 hover:bg-cream-50 rounded-xl", !filterDateFrom && "text-forest-400")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {filterDateFrom ? format(filterDateFrom, "dd-MMM-yy") : <span>Pilih tanggal</span>}
+                      </Btn>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={filterDateFrom} onSelect={setFilterDateFrom} initialFocus className="p-3 pointer-events-auto" />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-forest-700">Sampai Tanggal</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Btn variant="outline" className={cn("w-full justify-start text-left font-normal h-12 bg-white border-forest-200 hover:bg-cream-50 rounded-xl", !filterDateTo && "text-forest-400")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {filterDateTo ? format(filterDateTo, "dd-MMM-yy") : <span>Pilih tanggal</span>}
+                      </Btn>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={filterDateTo} onSelect={setFilterDateTo} initialFocus className="p-3 pointer-events-auto" />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            )}
+            <div className="flex items-end">
+              <Button variant="outline" onClick={clearFilters} className="w-full">
+                Reset Filter
+              </Button>
+            </div>
           </div>
-          
-          {showFilters && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-              <div className="space-y-2">
-                <Label>Dari Tanggal</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Btn variant="outline" className="w-full justify-start text-left font-normal">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {filterDateFrom ? format(filterDateFrom, "dd-MMM-yy") : <span>Pilih tanggal</span>}
-                    </Btn>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={filterDateFrom} onSelect={setFilterDateFrom} initialFocus className="p-3" />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="space-y-2">
-                <Label>Sampai Tanggal</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Btn variant="outline" className="w-full justify-start text-left font-normal">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {filterDateTo ? format(filterDateTo, "dd-MMM-yy") : <span>Pilih tanggal</span>}
-                    </Btn>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={filterDateTo} onSelect={setFilterDateTo} initialFocus className="p-3" />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="flex items-end">
-                <Button variant="outline" onClick={clearFilters} className="w-full">
-                  Reset Filter
-                </Button>
-              </div>
-            </div>
-          )}
-          
-          {(searchQuery || filterDateFrom || filterDateTo) && (
-            <div className="text-sm text-muted-foreground">
-              Menampilkan {filteredEntries.length} dari {displayEntries.length} data
-            </div>
           )}
         </div>
 
         {/* History Table matching Excel */}
-        <div className="bg-card rounded-lg border overflow-x-auto">
+        <div className="bg-white rounded-[24px] shadow-md border border-cream-100 overflow-x-auto mt-6">
           <Table>
-            <TableHeader className="bg-secondary">
+            <TableHeader className="bg-cream-50">
               <TableRow>
-                <TableHead className="text-xs font-semibold text-primary" rowSpan={2}>No.</TableHead>
-                <TableHead className="text-xs font-semibold text-primary" rowSpan={2}>Tanggal</TableHead>
+                <TableHead className="text-xs font-semibold text-forest-700">No.</TableHead>
+                <TableHead className="text-xs font-semibold text-forest-700">Tanggal</TableHead>
                 <TableHead className="text-xs font-semibold text-primary text-center" colSpan={3}>Penambahan Bahan Pakan</TableHead>
                 <TableHead className="text-xs font-semibold text-primary text-center" colSpan={3}>Stok Bahan Pakan</TableHead>
                 <TableHead className="text-xs font-semibold text-primary text-center" colSpan={2}>Produk</TableHead>
@@ -1048,6 +1247,9 @@ const WarehousePage = () => {
           </DialogContent>
         </Dialog>
       </div>
+        </div>
+        </TabsContent>
+      </Tabs>
       </div>
     </AppLayout>
   );

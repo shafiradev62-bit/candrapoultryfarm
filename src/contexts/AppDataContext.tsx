@@ -206,6 +206,31 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   }, [warehouseEntries, salesEntries, operationalEntries, dailyReports, financeEntries, feedFormulas]);
 
+  // Listen for storage changes from other tabs/windows (PWA <-> Web sync)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY && e.newValue) {
+        try {
+          const newData = JSON.parse(e.newValue);
+          console.log("🔄 Data synced from another tab/window");
+          setWarehouseEntries(newData.warehouseEntries || []);
+          setSalesEntries(newData.salesEntries || []);
+          setOperationalEntries(newData.operationalEntries || []);
+          setDailyReports(newData.dailyReports || []);
+          setFinanceEntries(newData.financeEntries || []);
+          setFeedFormulas(newData.feedFormulas || []);
+        } catch (error) {
+          console.error("Failed to sync data:", error);
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
   // Auto-sync to Upstash Redis
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
