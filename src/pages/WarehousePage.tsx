@@ -25,7 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Download, Plus, Trash2, Pencil, CalendarIcon, Save, Upload } from "lucide-react";
+import { Download, Plus, Trash2, Pencil, CalendarIcon, Save, Upload, Minus } from "lucide-react";
 import { exportToExcel } from "@/lib/exportExcel";
 import { useToast } from "@/hooks/use-toast";
 import { useAppData, type WarehouseRow } from "@/contexts/AppDataContext";
@@ -62,6 +62,12 @@ const WarehousePage = () => {
   const [telurButir, setTelurButir] = useState("");
   const [telurTray, setTelurTray] = useState("");
   const restoreInputRef = useRef<HTMLInputElement | null>(null);
+  
+  // State for egg reduction
+  const [reductionOpen, setReductionOpen] = useState(false);
+  const [reductionDate, setReductionDate] = useState<Date | undefined>(new Date());
+  const [reductionButir, setReductionButir] = useState("");
+  const [reductionKeterangan, setReductionKeterangan] = useState("");
 
   const handleBackupData = () => {
     const backup = {
@@ -235,6 +241,65 @@ const WarehousePage = () => {
     }
   };
 
+  const handlePenguranganStok = async () => {
+    if (isWorker) {
+      toast({ title: "Akses dibatasi", description: "Role Worker hanya bisa melihat data", variant: "destructive" });
+      return;
+    }
+    if (!reductionDate) {
+      toast({ title: "Error", description: "Tanggal wajib diisi", variant: "destructive" });
+      return;
+    }
+    const reductionValue = parseFloat(reductionButir || "0") || 0;
+    if (reductionValue <= 0) {
+      toast({ title: "Error", description: "Jumlah pengurangan harus lebih dari 0", variant: "destructive" });
+      return;
+    }
+    
+    const last = warehouseEntries[warehouseEntries.length - 1];
+    const currentTelurButir = last?.telurButir ?? 0;
+    
+    if (reductionValue > currentTelurButir) {
+      toast({ 
+        title: "Error", 
+        description: `Stok tidak cukup. Stok saat ini: ${currentTelurButir} butir`, 
+        variant: "destructive" 
+      });
+      return;
+    }
+    
+    const tanggalStr = format(reductionDate, "dd-MMM-yy");
+    const nextNo = warehouseEntries.length > 0 ? Math.max(...warehouseEntries.map((row) => row.no)) + 1 : 1;
+    const newTelurButir = currentTelurButir - reductionValue;
+    const newTelurTray = (newTelurButir / 30).toFixed(2);
+    
+    try {
+      await addWarehouseEntry({
+        no: nextNo,
+        tanggal: tanggalStr,
+        addJagung: 0,
+        addKonsentrat: 0,
+        addDedak: 0,
+        stokJagung: last?.stokJagung || 0,
+        stokKonsentrat: last?.stokKonsentrat || 0,
+        stokDedak: last?.stokDedak || 0,
+        telurButir: newTelurButir,
+        telurTray: newTelurTray,
+      });
+      
+      setReductionDate(new Date());
+      setReductionButir("");
+      setReductionKeterangan("");
+      setReductionOpen(false);
+      toast({ 
+        title: "Berhasil", 
+        description: `${reductionValue} butir telur berhasil dikurangi${reductionKeterangan ? ` (${reductionKeterangan})` : ""}` 
+      });
+    } catch (error) {
+      toast({ title: "Error", description: "Gagal mengurangi stok telur", variant: "destructive" });
+    }
+  };
+
   return (
     <AppLayout title="Warehouse">
       <div className="space-y-6">
@@ -263,7 +328,18 @@ const WarehousePage = () => {
               <Upload className="h-4 w-4 mr-2" />
               Restore Data
             </Button>
-            <Dialog open={open} onOpenChange={setOpen}>
+          </div>
+        </div>
+
+        <Tabs defaultValue="stok" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="stok">Stok Gudang</TabsTrigger>
+            <TabsTrigger value="pengurangan">Pengurangan Stok Telur</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="stok" className="space-y-6">
+            <div className="flex justify-end">
+              <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-primary hover:bg-primary/90" disabled={isWorker}>
                   <Plus className="h-4 w-4 mr-2" />
@@ -318,10 +394,9 @@ const WarehousePage = () => {
               </DialogContent>
             </Dialog>
           </div>
-        </div>
 
-        {/* Current Stock Summary */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+          {/* Current Stock Summary */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
           <div className={cn("bg-card rounded-lg border p-4", currentStock.stokJagung < 100 && "border-destructive border-2")}>
             <p className="text-xs text-muted-foreground">Jagung</p>
             <p className={cn("text-xl font-semibold", currentStock.stokJagung < 100 ? "text-destructive" : "text-primary")}>
@@ -432,6 +507,198 @@ const WarehousePage = () => {
             </TableBody>
           </Table>
         </div>
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Stok Gudang</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2 md:col-span-2">
+                <Label>Tanggal</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Btn variant="outline" className="w-full justify-start text-left font-normal h-12 md:h-10">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {editTanggal || "Pilih tanggal"}
+                    </Btn>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={(() => { try { return parse(editTanggal, "dd-MMM-yy", new Date()); } catch { return undefined; } })()}
+                      onSelect={(d) => d && setEditTanggal(format(d, "dd-MMM-yy"))}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <Label>Tambah Jagung (kg)</Label>
+                <Input type="number" value={editAddJagung} onChange={(e) => setEditAddJagung(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Tambah Konsentrat (kg)</Label>
+                <Input type="number" value={editAddKonsentrat} onChange={(e) => setEditAddKonsentrat(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Tambah Dedak (kg)</Label>
+                <Input type="number" value={editAddDedak} onChange={(e) => setEditAddDedak(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Stok Jagung (kg)</Label>
+                <Input type="number" value={editStokJagung} onChange={(e) => setEditStokJagung(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Stok Konsentrat (kg)</Label>
+                <Input type="number" value={editStokKonsentrat} onChange={(e) => setEditStokKonsentrat(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Stok Dedak (kg)</Label>
+                <Input type="number" value={editStokDedak} onChange={(e) => setEditStokDedak(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Telur (Butir)</Label>
+                <Input type="number" value={editTelurButir} onChange={(e) => setEditTelurButir(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Telur (Tray)</Label>
+                <Input type="number" value={editTelurTray} onChange={(e) => setEditTelurTray(e.target.value)} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={handleUpdate} className="bg-primary hover:bg-primary/90">
+                Simpan
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </TabsContent>
+      
+      <TabsContent value="pengurangan" className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-base font-semibold text-primary">Pengurangan Stok Telur</h2>
+            <p className="text-sm text-muted-foreground">Input manual pengurangan telur sesuai penjualan harian</p>
+          </div>
+          <Dialog open={reductionOpen} onOpenChange={setReductionOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-destructive hover:bg-destructive/90" disabled={isWorker}>
+                <Minus className="h-4 w-4 mr-2" />
+                Kurangi Stok Telur
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Pengurangan Stok Telur</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Tanggal</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Btn variant="outline" className={cn("w-full justify-start text-left font-normal h-12 md:h-10", !reductionDate && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {reductionDate ? format(reductionDate, "dd-MMM-yy") : <span>Pilih tanggal</span>}
+                      </Btn>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={reductionDate} onSelect={setReductionDate} initialFocus className="p-3 pointer-events-auto" />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="space-y-2">
+                  <Label>Jumlah Pengurangan (Butir)</Label>
+                  <Input 
+                    type="number" 
+                    value={reductionButir} 
+                    onChange={(e) => setReductionButir(e.target.value)}
+                    placeholder="Masukkan jumlah telur yang terjual"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Stok saat ini: {currentStock.telurButir.toLocaleString("id-ID")} butir ({currentStock.telurTray} tray)
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Keterangan (Opsional)</Label>
+                  <Input 
+                    type="text" 
+                    value={reductionKeterangan} 
+                    onChange={(e) => setReductionKeterangan(e.target.value)}
+                    placeholder="Contoh: Penjualan harian"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={handlePenguranganStok} className="bg-destructive hover:bg-destructive/90">
+                  Kurangi Stok
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Current Stock Summary for Eggs */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-card rounded-lg border p-6">
+            <p className="text-sm text-muted-foreground mb-2">Stok Telur Saat Ini</p>
+            <p className="text-3xl font-bold text-primary">{currentStock.telurButir.toLocaleString("id-ID")}</p>
+            <p className="text-sm text-muted-foreground mt-1">butir</p>
+          </div>
+          <div className="bg-card rounded-lg border p-6">
+            <p className="text-sm text-muted-foreground mb-2">Dalam Tray</p>
+            <p className="text-3xl font-bold text-primary">{currentStock.telurTray}</p>
+            <p className="text-sm text-muted-foreground mt-1">tray (@ 30 butir)</p>
+          </div>
+        </div>
+
+        {/* Recent Egg Stock Changes */}
+        <div className="bg-card rounded-lg border overflow-x-auto">
+          <div className="p-4 border-b">
+            <h3 className="text-sm font-semibold text-primary">Riwayat Perubahan Stok Telur</h3>
+          </div>
+          <Table>
+            <TableHeader className="bg-secondary">
+              <TableRow>
+                <TableHead className="text-xs font-semibold text-primary">No.</TableHead>
+                <TableHead className="text-xs font-semibold text-primary">Tanggal</TableHead>
+                <TableHead className="text-xs font-semibold text-primary text-right">Stok Telur (Butir)</TableHead>
+                <TableHead className="text-xs font-semibold text-primary text-right">Stok Telur (Tray)</TableHead>
+                <TableHead className="text-xs font-semibold text-primary text-right">Perubahan</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {displayEntries.map((row, index) => {
+                const prevRow = displayEntries[index + 1];
+                const change = prevRow ? row.telurButir - prevRow.telurButir : 0;
+                const isReduction = change < 0;
+                const isAddition = change > 0;
+                
+                return (
+                  <TableRow key={row.no} className="hover:bg-secondary/50">
+                    <TableCell className="text-sm">{row.no}</TableCell>
+                    <TableCell className="text-sm">{row.tanggal}</TableCell>
+                    <TableCell className="text-sm text-right font-medium">{row.telurButir.toLocaleString("id-ID")}</TableCell>
+                    <TableCell className="text-sm text-right font-medium">{row.telurTray}</TableCell>
+                    <TableCell className="text-sm text-right">
+                      {change !== 0 && (
+                        <span className={cn(
+                          "font-medium",
+                          isReduction && "text-destructive",
+                          isAddition && "text-green-600"
+                        )}>
+                          {change > 0 ? "+" : ""}{change.toLocaleString("id-ID")}
+                        </span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </TabsContent>
+    </Tabs>
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogContent>
             <DialogHeader>
