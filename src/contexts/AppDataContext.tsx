@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { format, parse } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { pushAllToSupabase, pullAllFromSupabase, pushToSupabase } from "@/lib/supabase-sync";
 
 export interface WarehouseRow {
   no: number;
@@ -181,6 +182,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [dailyReports, setDailyReports] = useState<DailyReportRow[]>(stored?.dailyReports ?? defaultData.dailyReports);
   const [financeEntries, setFinanceEntries] = useState<FinanceRow[]>(stored?.financeEntries ?? defaultData.financeEntries);
   const [feedFormulas, setFeedFormulas] = useState<FeedFormulaRow[]>(stored?.feedFormulas ?? defaultData.feedFormulas);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const recomputeSaldo = (entries: FinanceRow[]) => {
     let saldo = 0;
@@ -191,6 +193,40 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const nextNo = (rows: { no: number }[]) => rows.length > 0 ? Math.max(...rows.map((row) => row.no)) + 1 : 1;
+
+  // Initial pull from Supabase on mount
+  useEffect(() => {
+    const loadFromSupabase = async () => {
+      console.log("🔄 Loading data from Supabase...");
+      const supabaseData = await pullAllFromSupabase();
+      
+      if (supabaseData) {
+        // Only update if Supabase has data
+        if (supabaseData.dailyReports.length > 0) {
+          setDailyReports(supabaseData.dailyReports);
+        }
+        if (supabaseData.warehouseEntries.length > 0) {
+          setWarehouseEntries(supabaseData.warehouseEntries);
+        }
+        if (supabaseData.salesEntries.length > 0) {
+          setSalesEntries(supabaseData.salesEntries);
+        }
+        if (supabaseData.operationalEntries.length > 0) {
+          setOperationalEntries(supabaseData.operationalEntries);
+        }
+        if (supabaseData.financeEntries.length > 0) {
+          setFinanceEntries(supabaseData.financeEntries);
+        }
+        if (supabaseData.feedFormulas.length > 0) {
+          setFeedFormulas(supabaseData.feedFormulas);
+        }
+        console.log("✅ Data loaded from Supabase");
+      }
+      setIsInitialLoad(false);
+    };
+
+    loadFromSupabase();
+  }, []);
 
   // Persist to localStorage on every change
   useEffect(() => {
@@ -205,6 +241,29 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   }, [warehouseEntries, salesEntries, operationalEntries, dailyReports, financeEntries, feedFormulas]);
+
+  // Auto-push to Supabase on every change (debounced)
+  const pushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (isInitialLoad) return; // Skip initial load
+
+    if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
+    pushTimerRef.current = setTimeout(async () => {
+      console.log("📤 Auto-pushing to Supabase...");
+      await pushAllToSupabase({
+        dailyReports,
+        warehouseEntries,
+        salesEntries,
+        operationalEntries,
+        financeEntries,
+        feedFormulas,
+      });
+    }, 2000); // Push after 2 seconds of inactivity
+
+    return () => {
+      if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
+    };
+  }, [dailyReports, warehouseEntries, salesEntries, operationalEntries, financeEntries, feedFormulas, isInitialLoad]);
 
   // Listen for storage changes from other tabs/windows (PWA <-> Web sync)
   useEffect(() => {
@@ -232,20 +291,19 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Real-time polling sync for APK <-> Web (every 3 seconds)
+  // Now pulls from Supabase instead of just LocalStorage
   const lastSyncHashRef = useRef<string>("");
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const pollInterval = setInterval(() => {
+    const pollInterval = setInterval(async () => {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return;
+        // Pull from Supabase
+        console.log("🔄 Polling Supabase for updates...");
+        const supabaseData = await pullAllFromSupabase();
+        
+        if (!supabaseData) return;
 
-        // Check if data has changed using hash
-        const currentHash = raw.length + raw.substring(0, 100);
-        if (currentHash === lastSyncHashRef.current) return;
-
-        const newData = JSON.parse(raw);
         const currentData = {
           warehouseEntries,
           salesEntries,
@@ -256,45 +314,22 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         };
 
         // Compare data to avoid unnecessary updates
-        const hasChanges = JSON.stringify(newData) !== JSON.stringify(currentData);
+        const hasChanges = JSON.stringify(supabaseData) !== JSON.stringify(currentData);
         if (hasChanges) {
-          console.log("🔄 Auto-sync: New data detected from APK");
-          setWarehouseEntries(newData.warehouseEntries || []);
-          setSalesEntries(newData.salesEntries || []);
-          setOperationalEntries(newData.operationalEntries || []);
-          setDailyReports(newData.dailyReports || []);
-          setFinanceEntries(newData.financeEntries || []);
-          setFeedFormulas(newData.feedFormulas || []);
-          lastSyncHashRef.current = currentHash;
+          console.log("🔄 Auto-sync: New data detected from Supabase");
+          setWarehouseEntries(supabaseData.warehouseEntries || []);
+          setSalesEntries(supabaseData.salesEntries || []);
+          setOperationalEntries(supabaseData.operationalEntries || []);
+          setDailyReports(supabaseData.dailyReports || []);
+          setFinanceEntries(supabaseData.financeEntries || []);
+          setFeedFormulas(supabaseData.feedFormulas || []);
         }
       } catch (error) {
         console.error("Polling sync error:", error);
       }
-    }, 3000); // Poll every 3 seconds
+    }, 5000); // Poll every 5 seconds
 
     return () => clearInterval(pollInterval);
-  }, [warehouseEntries, salesEntries, operationalEntries, dailyReports, financeEntries, feedFormulas]);
-
-  // Auto-sync to Upstash Redis
-  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
-    syncTimerRef.current = setTimeout(() => {
-      supabase.functions.invoke("sync-redis", {
-        body: {
-          action: "push_all",
-          data: {
-            warehouse: warehouseEntries,
-            daily_reports: dailyReports,
-            sales: salesEntries,
-            operational: operationalEntries,
-            finance: financeEntries,
-            feed_formulas: feedFormulas,
-          },
-        },
-      }).catch((err) => console.warn("Redis sync failed:", err));
-    }, 2000); // debounce 2 seconds
-    return () => { if (syncTimerRef.current) clearTimeout(syncTimerRef.current); };
   }, [warehouseEntries, salesEntries, operationalEntries, dailyReports, financeEntries, feedFormulas]);
 
   const applyDailyReportToWarehouse = async (entries: DailyReportRow[]) => {
