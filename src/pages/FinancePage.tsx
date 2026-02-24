@@ -134,6 +134,7 @@ const FinancePage = () => {
 
   return (
     <AppLayout title="Finance">
+      <div className="p-4 lg:p-6">
       <div className="space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
@@ -258,6 +259,7 @@ const FinancePage = () => {
             </TableBody>
           </Table>
         </div>
+      </div>
       </div>
     </AppLayout>
   );

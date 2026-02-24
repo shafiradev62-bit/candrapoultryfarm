@@ -75,6 +75,7 @@ const PengaturanPage = () => {
 
   return (
     <AppLayout title="Pengaturan">
+      <div className="p-4 lg:p-6">
       <div className="space-y-6">
         <div>
           <h1 className="text-lg font-semibold text-primary">Pengaturan Sistem</h1>
@@ -216,6 +217,7 @@ const PengaturanPage = () => {
             </div>
           </TabsContent>
         </Tabs>
+      </div>
       </div>
     </AppLayout>
   );

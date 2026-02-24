@@ -167,6 +167,7 @@ const Dashboard = () => {
 
   return (
     <AppLayout title="Dashboard">
+      <div className="p-4 lg:p-6">
       <div className="space-y-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
@@ -407,6 +408,7 @@ const Dashboard = () => {
             </Table>
           </div>
         </section>
+      </div>
       </div>
     </AppLayout>
   );
