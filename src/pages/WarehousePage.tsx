@@ -25,7 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Download, Plus, Trash2, Pencil, CalendarIcon, Save, Upload, Minus } from "lucide-react";
+import { Download, Plus, Trash2, Pencil, CalendarIcon, Save, Upload, Minus, Search, Filter, TrendingDown, TrendingUp, AlertTriangle } from "lucide-react";
 import { exportToExcel } from "@/lib/exportExcel";
 import { useToast } from "@/hooks/use-toast";
 import { useAppData, type WarehouseRow } from "@/contexts/AppDataContext";
@@ -68,6 +68,15 @@ const WarehousePage = () => {
   const [reductionDate, setReductionDate] = useState<Date | undefined>(new Date());
   const [reductionButir, setReductionButir] = useState("");
   const [reductionKeterangan, setReductionKeterangan] = useState("");
+  
+  // State for search and filter
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState<Date | undefined>();
+  const [filterDateTo, setFilterDateTo] = useState<Date | undefined>();
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // State for quick reduction presets
+  const [quickReductionOpen, setQuickReductionOpen] = useState(false);
 
   const handleBackupData = () => {
     const backup = {
@@ -135,6 +144,49 @@ const WarehousePage = () => {
     telurTray: "0.00",
   };
   const displayEntries = [...warehouseEntries].sort((a, b) => b.no - a.no);
+  
+  // Filter entries based on search and date range
+  const filteredEntries = displayEntries.filter(entry => {
+    const matchesSearch = searchQuery === "" || 
+      entry.tanggal.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      entry.no.toString().includes(searchQuery);
+    
+    if (!matchesSearch) return false;
+    
+    if (filterDateFrom || filterDateTo) {
+      try {
+        const entryDate = parse(entry.tanggal, "dd-MMM-yy", new Date());
+        if (filterDateFrom && entryDate < filterDateFrom) return false;
+        if (filterDateTo && entryDate > filterDateTo) return false;
+      } catch {
+        return true;
+      }
+    }
+    
+    return true;
+  });
+  
+  // Calculate statistics for filtered period
+  const stats = {
+    totalEggReduction: 0,
+    totalEggAddition: 0,
+    totalFeedAddition: 0,
+    avgDailyEggReduction: 0,
+  };
+  
+  filteredEntries.forEach((entry, index) => {
+    const prevEntry = filteredEntries[index + 1];
+    if (prevEntry) {
+      const eggChange = entry.telurButir - prevEntry.telurButir;
+      if (eggChange < 0) stats.totalEggReduction += Math.abs(eggChange);
+      if (eggChange > 0) stats.totalEggAddition += eggChange;
+    }
+    stats.totalFeedAddition += entry.addJagung + entry.addKonsentrat + entry.addDedak;
+  });
+  
+  if (filteredEntries.length > 1) {
+    stats.avgDailyEggReduction = stats.totalEggReduction / (filteredEntries.length - 1);
+  }
 
   const handleTambahStok = async () => {
     if (isWorker) {
@@ -299,6 +351,54 @@ const WarehousePage = () => {
       toast({ title: "Error", description: "Gagal mengurangi stok telur", variant: "destructive" });
     }
   };
+  
+  const handleQuickReduction = async (amount: number, label: string) => {
+    const last = warehouseEntries[warehouseEntries.length - 1];
+    const currentTelurButir = last?.telurButir ?? 0;
+    
+    if (amount > currentTelurButir) {
+      toast({ 
+        title: "Error", 
+        description: `Stok tidak cukup. Stok saat ini: ${currentTelurButir} butir`, 
+        variant: "destructive" 
+      });
+      return;
+    }
+    
+    const tanggalStr = format(new Date(), "dd-MMM-yy");
+    const nextNo = warehouseEntries.length > 0 ? Math.max(...warehouseEntries.map((row) => row.no)) + 1 : 1;
+    const newTelurButir = currentTelurButir - amount;
+    const newTelurTray = (newTelurButir / 30).toFixed(2);
+    
+    try {
+      await addWarehouseEntry({
+        no: nextNo,
+        tanggal: tanggalStr,
+        addJagung: 0,
+        addKonsentrat: 0,
+        addDedak: 0,
+        stokJagung: last?.stokJagung || 0,
+        stokKonsentrat: last?.stokKonsentrat || 0,
+        stokDedak: last?.stokDedak || 0,
+        telurButir: newTelurButir,
+        telurTray: newTelurTray,
+      });
+      
+      setQuickReductionOpen(false);
+      toast({ 
+        title: "Berhasil", 
+        description: `${label}: ${amount} butir telur berhasil dikurangi` 
+      });
+    } catch (error) {
+      toast({ title: "Error", description: "Gagal mengurangi stok telur", variant: "destructive" });
+    }
+  };
+  
+  const clearFilters = () => {
+    setSearchQuery("");
+    setFilterDateFrom(undefined);
+    setFilterDateTo(undefined);
+  };
 
   return (
     <AppLayout title="Warehouse">
@@ -433,6 +533,75 @@ const WarehousePage = () => {
             <p className="text-xl font-semibold text-primary">{currentStock.telurTray}</p>
           </div>
         </div>
+        
+        {/* Search and Filter Section */}
+        <div className="bg-card rounded-lg border p-4 space-y-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cari berdasarkan tanggal atau nomor..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="border-primary/30"
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              {showFilters ? "Sembunyikan" : "Tampilkan"} Filter
+            </Button>
+          </div>
+          
+          {showFilters && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+              <div className="space-y-2">
+                <Label>Dari Tanggal</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Btn variant="outline" className="w-full justify-start text-left font-normal">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {filterDateFrom ? format(filterDateFrom, "dd-MMM-yy") : <span>Pilih tanggal</span>}
+                    </Btn>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={filterDateFrom} onSelect={setFilterDateFrom} initialFocus className="p-3" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <Label>Sampai Tanggal</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Btn variant="outline" className="w-full justify-start text-left font-normal">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {filterDateTo ? format(filterDateTo, "dd-MMM-yy") : <span>Pilih tanggal</span>}
+                    </Btn>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={filterDateTo} onSelect={setFilterDateTo} initialFocus className="p-3" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="flex items-end">
+                <Button variant="outline" onClick={clearFilters} className="w-full">
+                  Reset Filter
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          {(searchQuery || filterDateFrom || filterDateTo) && (
+            <div className="text-sm text-muted-foreground">
+              Menampilkan {filteredEntries.length} dari {displayEntries.length} data
+            </div>
+          )}
+        </div>
 
         {/* History Table matching Excel */}
         <div className="bg-card rounded-lg border overflow-x-auto">
@@ -460,7 +629,7 @@ const WarehousePage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {displayEntries.map((row) => (
+              {filteredEntries.map((row) => (
                 <TableRow key={row.no} className="hover:bg-secondary/50">
                   <TableCell className="text-sm">{row.no}</TableCell>
                   <TableCell className="text-sm">{row.tanggal}</TableCell>
@@ -576,12 +745,81 @@ const WarehousePage = () => {
       </TabsContent>
       
       <TabsContent value="pengurangan" className="space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h2 className="text-base font-semibold text-primary">Pengurangan Stok Telur</h2>
             <p className="text-sm text-muted-foreground">Input manual pengurangan telur sesuai penjualan harian</p>
           </div>
-          <Dialog open={reductionOpen} onOpenChange={setReductionOpen}>
+          <div className="flex gap-2">
+            <Dialog open={quickReductionOpen} onOpenChange={setQuickReductionOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="border-primary/30" disabled={isWorker}>
+                  <TrendingDown className="h-4 w-4 mr-2" />
+                  Quick Actions
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Pengurangan Cepat</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Stok saat ini: {currentStock.telurButir.toLocaleString("id-ID")} butir
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      variant="outline"
+                      className="h-20 flex-col"
+                      onClick={() => handleQuickReduction(30, "1 Tray")}
+                    >
+                      <span className="text-2xl font-bold">30</span>
+                      <span className="text-xs">1 Tray</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-20 flex-col"
+                      onClick={() => handleQuickReduction(60, "2 Tray")}
+                    >
+                      <span className="text-2xl font-bold">60</span>
+                      <span className="text-xs">2 Tray</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-20 flex-col"
+                      onClick={() => handleQuickReduction(90, "3 Tray")}
+                    >
+                      <span className="text-2xl font-bold">90</span>
+                      <span className="text-xs">3 Tray</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-20 flex-col"
+                      onClick={() => handleQuickReduction(150, "5 Tray")}
+                    >
+                      <span className="text-2xl font-bold">150</span>
+                      <span className="text-xs">5 Tray</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-20 flex-col"
+                      onClick={() => handleQuickReduction(300, "10 Tray")}
+                    >
+                      <span className="text-2xl font-bold">300</span>
+                      <span className="text-xs">10 Tray</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-20 flex-col"
+                      onClick={() => handleQuickReduction(600, "20 Tray")}
+                    >
+                      <span className="text-2xl font-bold">600</span>
+                      <span className="text-xs">20 Tray</span>
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Dialog open={reductionOpen} onOpenChange={setReductionOpen}>
             <DialogTrigger asChild>
               <Button className="bg-destructive hover:bg-destructive/90" disabled={isWorker}>
                 <Minus className="h-4 w-4 mr-2" />
@@ -637,6 +875,49 @@ const WarehousePage = () => {
             </DialogContent>
           </Dialog>
         </div>
+        </div>
+
+        {/* Statistics Cards */}
+        {(searchQuery || filterDateFrom || filterDateTo) && filteredEntries.length > 1 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-card rounded-lg border p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingDown className="h-4 w-4 text-destructive" />
+                <p className="text-xs text-muted-foreground">Total Pengurangan</p>
+              </div>
+              <p className="text-2xl font-bold text-destructive">{stats.totalEggReduction.toLocaleString("id-ID")}</p>
+              <p className="text-xs text-muted-foreground mt-1">butir</p>
+            </div>
+            <div className="bg-card rounded-lg border p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="h-4 w-4 text-green-600" />
+                <p className="text-xs text-muted-foreground">Total Penambahan</p>
+              </div>
+              <p className="text-2xl font-bold text-green-600">{stats.totalEggAddition.toLocaleString("id-ID")}</p>
+              <p className="text-xs text-muted-foreground mt-1">butir</p>
+            </div>
+            <div className="bg-card rounded-lg border p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingDown className="h-4 w-4 text-primary" />
+                <p className="text-xs text-muted-foreground">Rata-rata Harian</p>
+              </div>
+              <p className="text-2xl font-bold text-primary">{Math.round(stats.avgDailyEggReduction).toLocaleString("id-ID")}</p>
+              <p className="text-xs text-muted-foreground mt-1">butir/hari</p>
+            </div>
+            <div className="bg-card rounded-lg border p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="h-4 w-4 text-orange-500" />
+                <p className="text-xs text-muted-foreground">Estimasi Habis</p>
+              </div>
+              <p className="text-2xl font-bold text-orange-500">
+                {stats.avgDailyEggReduction > 0 
+                  ? Math.round(currentStock.telurButir / stats.avgDailyEggReduction)
+                  : "∞"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">hari</p>
+            </div>
+          </div>
+        )}
 
         {/* Current Stock Summary for Eggs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -668,8 +949,8 @@ const WarehousePage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {displayEntries.map((row, index) => {
-                const prevRow = displayEntries[index + 1];
+              {filteredEntries.map((row, index) => {
+                const prevRow = filteredEntries[index + 1];
                 const change = prevRow ? row.telurButir - prevRow.telurButir : 0;
                 const isReduction = change < 0;
                 const isAddition = change > 0;
