@@ -800,7 +800,6 @@ const WarehousePage = () => {
               </Button>
             </div>
           </div>
-          )}
         </div>
 
         {/* History Table matching Excel */}
@@ -1246,10 +1245,6 @@ const WarehousePage = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
-        </div>
-        </TabsContent>
-      </Tabs>
       </div>
     </AppLayout>
   );
