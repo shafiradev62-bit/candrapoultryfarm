@@ -1,31 +1,149 @@
 <!doctype html>
-<html lang="id">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#16a34a" />
-    <meta name="description" content="Candra Poultry Farm - Mobile App" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Candra Farm" />
-    <link rel="apple-touch-icon" href="/logo.png" />
-    <link rel="manifest" href="/manifest.pwa.json" />
-    <title>Candra Poultry Farm - Mobile</title>
+    <meta id="viewport-meta" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!-- TODO: Set the document title to the name of your application -->
+    <title>Candra Poultry Farm</title>
+    <meta name="description" content="Poultry farm project">
+    <meta name="author" content="Lovable" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/5499e5d3-040c-4a19-8ee3-4a7f29272586/id-preview-55758449--865253f0-6b5b-4e78-9b47-1bfbb704b943.lovable.app-1771298539436.png">
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@Lovable" />
+    <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/5499e5d3-040c-4a19-8ee3-4a7f29272586/id-preview-55758449--865253f0-6b5b-4e78-9b47-1bfbb704b943.lovable.app-1771298539436.png">
+    <meta property="og:title" content="Candra Poultry Farm">
+    <meta name="twitter:title" content="Candra Poultry Farm">
+    <meta property="og:description" content="Poultry farm project">
+    <meta name="twitter:description" content="Poultry farm project">
+
     <style>
-      /* Prevent orientation lock overlay */
-      body {
-        margin: 0;
-        padding: 0;
-        overflow-x: hidden;
+      /* Portrait Mode Overlay */
+      #portrait-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        z-index: 9999;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        text-align: center;
+        color: white;
       }
-      #root {
-        min-height: 100vh;
+
+      #portrait-overlay svg {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 1.5rem;
+        animation: rotate 2s ease-in-out infinite;
+      }
+
+      #portrait-overlay h2 {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+      }
+
+      #portrait-overlay p {
+        font-size: 1rem;
+        opacity: 0.9;
+        max-width: 300px;
+      }
+
+      @keyframes rotate {
+        0%, 100% { transform: rotate(0deg); }
+        50% { transform: rotate(90deg); }
+      }
+
+      /* Show overlay in portrait mode on small screens */
+      @media (orientation: portrait) and (max-width: 768px) {
+        #portrait-overlay {
+          display: flex !important;
+        }
+        #root {
+          display: none !important;
+        }
+      }
+
+      /* Landscape mode optimizations for mobile */
+      @media (orientation: landscape) and (max-height: 768px) {
+        body {
+          overflow: hidden;
+        }
+
+        #root {
+          height: 100vh;
+          overflow: hidden;
+        }
+
+        /* Scale down for very small landscape screens */
+        @media (max-height: 500px) {
+          #root {
+            transform-origin: top left;
+            transform: scale(0.85);
+            width: 117.65%;
+            height: 117.65vh;
+          }
+        }
+
+        @media (max-height: 400px) {
+          #root {
+            transform: scale(0.75);
+            width: 133.33%;
+            height: 133.33vh;
+          }
+        }
       }
     </style>
   </head>
+
   <body>
+    <div id="portrait-overlay">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+      </svg>
+      <h2>Putar Perangkat Anda</h2>
+      <p>Silakan putar perangkat Anda ke mode Landscape untuk melihat Dashboard.</p>
+    </div>
     <div id="root"></div>
-    <script type="module" src="/src/main-pwa.tsx"></script>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Dynamic viewport adjustment for landscape mode
+      function adjustViewportForLandscape() {
+        const viewportMeta = document.getElementById('viewport-meta');
+        const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+        const screenWidth = window.screen.width;
+        const screenHeight = window.screen.height;
+
+        if (isLandscape && screenHeight <= 768) {
+          // Calculate scale to fit desktop layout (1280px) into current width
+          const targetWidth = 1280;
+          const scale = Math.min(screenWidth / targetWidth, 1);
+          const initialScale = scale.toFixed(3);
+
+          viewportMeta.setAttribute('content',
+            `width=${targetWidth}, initial-scale=${initialScale}, maximum-scale=${initialScale}, user-scalable=no`
+          );
+        } else {
+          viewportMeta.setAttribute('content',
+            'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
+          );
+        }
+      }
+
+      // Run on load and orientation change
+      adjustViewportForLandscape();
+      window.addEventListener('orientationchange', () => {
+        setTimeout(adjustViewportForLandscape, 100);
+      });
+      window.addEventListener('resize', adjustViewportForLandscape);
+    </script>
   </body>
 </html>
