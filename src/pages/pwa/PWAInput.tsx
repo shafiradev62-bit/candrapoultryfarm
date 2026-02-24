@@ -117,7 +117,7 @@ export default function PWAInput() {
 
   return (
     <PWALayout title="Input Harian">
-      <div className="px-6 pt-6 pb-28">
+      <div className="space-y-4 w-full max-w-full">
         {/* iOS Progress */}
         <div className="mb-6">
           <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
