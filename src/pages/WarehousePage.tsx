@@ -1,3 +1,4 @@
+// WarehousePage - Rebuilt 2024-12-24 - Clean version without JSX errors
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
