@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto-Sync Test - Candra Farm</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1B4332;
+            margin-bottom: 10px;
+        }
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+        .indicator.active {
+            background: #10b981;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #1B4332;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #374151;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #1B4332;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #1B4332;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: #0f2419;
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .data-display {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .data-item {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 3px solid #1B4332;
+        }
+        .data-item:last-child {
+            margin-bottom: 0;
+        }
+        .data-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 3px;
+        }
+        .data-value {
+            font-size: 14px;
+            color: #1f2937;
+            font-weight: 500;
+        }
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #3b82f6;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .stat-card {
+            background: #f9fafb;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1B4332;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Auto-Sync Test - Candra Farm</h1>
+            <p style="color: #6b7280; margin-top: 5px;">Test real-time synchronization between APK and Web Dashboard</p>
+            <div class="status">
+                <div class="indicator" id="syncIndicator"></div>
+                <span id="syncStatus">Monitoring LocalStorage...</span>
+            </div>
+        </div>
+
+        <div class="alert alert-info">
+            <strong>📋 Instructions:</strong> Input data di panel kiri, lalu cek apakah data muncul di panel kanan dalam 3 detik. Buka halaman ini di 2 tab untuk test cross-tab sync.
+        </div>
+
+        <div class="grid">
+            <!-- Input Panel (Simulate APK) -->
+            <div class="panel">
+                <h2>📱 Simulate APK Input</h2>
+                <form id="inputForm">
+                    <div class="form-group">
+                        <label>Tanggal</label>
+                        <input type="date" id="tanggal" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Jumlah Ayam</label>
+                        <input type="number" id="jumlahAyam" value="1008" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Kematian</label>
+                        <input type="number" id="kematian" value="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Produksi Telur (butir)</label>
+                        <input type="number" id="prodButir" value="850" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Total Pakan (kg)</label>
+                        <input type="number" step="0.1" id="totalPakan" value="85.5" required>
+                    </div>
+                    <button type="submit">💾 Simpan ke LocalStorage</button>
+                </form>
+
+                <div class="stats" style="margin-top: 20px;">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalReports">0</div>
+                        <div class="stat-label">Total Reports</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="lastSync">-</div>
+                        <div class="stat-label">Last Sync</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="syncCount">0</div>
+                        <div class="stat-label">Sync Count</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Display Panel (Simulate Web Dashboard) -->
+            <div class="panel">
+                <h2>💻 Web Dashboard View</h2>
+                <div class="alert alert-success" id="successAlert" style="display: none;">
+                    ✅ Data berhasil ter-sync!
+                </div>
+                <div class="data-display" id="dataDisplay">
+                    <p style="color: #9ca3af; text-align: center;">Waiting for data...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = "candra-appdata-v1";
+        let syncCount = 0;
+        let lastData = null;
+
+        // Set default date to today
+        document.getElementById('tanggal').valueAsDate = new Date();
+
+        // Load initial data
+        function loadData() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return null;
+            try {
+                return JSON.parse(raw);
+            } catch (e) {
+                console.error('Parse error:', e);
+                return null;
+            }
+        }
+
+        // Display data
+        function displayData(data) {
+            const display = document.getElementById('dataDisplay');
+            if (!data || !data.dailyReports || data.dailyReports.length === 0) {
+                display.innerHTML = '<p style="color: #9ca3af; text-align: center;">No data yet...</p>';
+                return;
+            }
+
+            const reports = data.dailyReports.slice(-5).reverse(); // Last 5 reports
+            display.innerHTML = reports.map(report => `
+                <div class="data-item">
+                    <div class="data-label">Tanggal</div>
+                    <div class="data-value">${report.tanggal}</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
+                        <div>
+                            <div class="data-label">Ayam</div>
+                            <div class="data-value">${report.jumlahAyam} ekor</div>
+                        </div>
+                        <div>
+                            <div class="data-label">Telur</div>
+                            <div class="data-value">${report.prodButir} butir</div>
+                        </div>
+                        <div>
+                            <div class="data-label">Pakan</div>
+                            <div class="data-value">${report.totalPakan} kg</div>
+                        </div>
+                        <div>
+                            <div class="data-label">% Produksi</div>
+                            <div class="data-value">${report.pctProduksi}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('totalReports').textContent = data.dailyReports.length;
+        }
+
+        // Handle form submit
+        document.getElementById('inputForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const tanggal = document.getElementById('tanggal').value;
+            const jumlahAyam = parseInt(document.getElementById('jumlahAyam').value);
+            const kematian = parseInt(document.getElementById('kematian').value);
+            const prodButir = parseInt(document.getElementById('prodButir').value);
+            const totalPakan = parseFloat(document.getElementById('totalPakan').value);
+
+            // Format date
+            const date = new Date(tanggal);
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            const formattedDate = `${date.getDate().toString().padStart(2, '0')}-${months[date.getMonth()]}-${date.getFullYear().toString().slice(-2)}`;
+
+            // Load existing data
+            let data = loadData() || {
+                warehouseEntries: [],
+                salesEntries: [],
+                operationalEntries: [],
+                dailyReports: [],
+                financeEntries: [],
+                feedFormulas: []
+            };
+
+            // Calculate values
+            const pctProduksi = ((prodButir / jumlahAyam) * 100).toFixed(2) + '%';
+            const prodTray = (prodButir / 30).toFixed(2);
+            const nextNo = data.dailyReports.length > 0 ? Math.max(...data.dailyReports.map(r => r.no)) + 1 : 1;
+
+            // Add new report
+            const newReport = {
+                no: nextNo,
+                tanggal: formattedDate,
+                usia: 20,
+                jumlahAyam: jumlahAyam - kematian,
+                kematian: kematian,
+                jualAyam: 0,
+                totalPakan: totalPakan,
+                jagung: totalPakan * 0.5,
+                konsentrat: totalPakan * 0.35,
+                dedak: totalPakan * 0.15,
+                vitaminObat: "-",
+                prodButir: prodButir,
+                prodTray: prodTray,
+                reject: 0,
+                pctProduksi: pctProduksi,
+                keterangan: "Test from auto-sync"
+            };
+
+            data.dailyReports.push(newReport);
+
+            // Save to LocalStorage
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+            // Show success
+            const alert = document.getElementById('successAlert');
+            alert.style.display = 'block';
+            setTimeout(() => alert.style.display = 'none', 3000);
+
+            // Update display
+            displayData(data);
+
+            console.log('✅ Data saved to LocalStorage:', newReport);
+        });
+
+        // Monitor LocalStorage changes (polling every 1 second for demo)
+        setInterval(() => {
+            const data = loadData();
+            const currentHash = JSON.stringify(data);
+            
+            if (currentHash !== lastData) {
+                lastData = currentHash;
+                syncCount++;
+                
+                // Update UI
+                const indicator = document.getElementById('syncIndicator');
+                const status = document.getElementById('syncStatus');
+                
+                indicator.classList.add('active');
+                status.textContent = '🔄 Syncing...';
+                
+                setTimeout(() => {
+                    indicator.classList.remove('active');
+                    status.textContent = '✅ Synced - Monitoring...';
+                }, 1000);
+
+                // Update stats
+                const now = new Date();
+                document.getElementById('lastSync').textContent = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                document.getElementById('syncCount').textContent = syncCount;
+
+                // Display data
+                displayData(data);
+
+                console.log('🔄 Auto-sync detected change');
+            }
+        }, 1000); // Check every 1 second (faster for demo)
+
+        // Listen for storage events (cross-tab sync)
+        window.addEventListener('storage', (e) => {
+            if (e.key === STORAGE_KEY) {
+                console.log('⚡ Storage event detected (cross-tab sync)');
+                const data = loadData();
+                displayData(data);
+            }
+        });
+
+        // Initial load
+        displayData(loadData());
+    </script>
+</body>
+</html>
