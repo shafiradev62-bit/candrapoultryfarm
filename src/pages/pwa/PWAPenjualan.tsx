@@ -107,7 +107,7 @@ export default function PWAPenjualan() {
 
   return (
     <PWALayout title="Penjualan">
-      <div className="px-6 pt-6 pb-28 space-y-5">
+      <div className="space-y-4 pb-28">
         {/* iOS Date Picker Modal */}
         {showDatePicker && (
           <div className="fixed inset-0 z-50 bg-black/40 flex items-end" onClick={() => setShowDatePicker(false)}>
@@ -121,7 +121,7 @@ export default function PWAPenjualan() {
           </div>
         )}
 
-        <div className="bg-white rounded-[24px] p-5 shadow-sm">
+        <div className="bg-white rounded-[20px] p-4 shadow-sm">
           <label className="text-sm font-semibold text-[#1B4332] mb-2 block">Tanggal</label>
           <button type="button" onClick={() => setShowDatePicker(true)} className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-[16px] text-left text-[#1B4332] font-medium">
             {format(new Date(tanggal), "dd MMMM yyyy", { locale: { localize: { month: (n: number) => ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"][n] } } })}
@@ -129,7 +129,7 @@ export default function PWAPenjualan() {
         </div>
 
         {currentStock && (
-          <div className="bg-white rounded-[24px] p-5 shadow-sm">
+          <div className="bg-white rounded-[20px] p-4 shadow-sm">
             <p className="text-xs text-gray-500 mb-1">Stok Tersedia</p>
             <p className="text-3xl font-bold text-[#1B4332]">{currentStock.telurButir.toLocaleString("id-ID")} <span className="text-base font-normal text-gray-500">butir</span></p>
             <p className="text-xs text-gray-400 mt-1">{currentStock.telurTray} tray</p>
@@ -138,37 +138,37 @@ export default function PWAPenjualan() {
 
         <div className="space-y-3">
           {categories.map((cat) => (
-            <div key={cat.label} className="bg-white rounded-[24px] p-5 shadow-sm">
-              <h4 className="font-bold text-[#1B4332] mb-3">{cat.label}</h4>
-              <div className="space-y-3">
+            <div key={cat.label} className="bg-white rounded-[20px] p-4 shadow-sm">
+              <h4 className="font-bold text-[#1B4332] mb-3 text-sm">{cat.label}</h4>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Tray</label>
-                  <div className="flex gap-2">
-                    <button type="button" onClick={() => cat.setTray((prev) => Math.max(0, parseFloat(prev || "0") - 0.5).toFixed(1))} className="w-10 h-10 bg-gray-100 rounded-[10px] font-bold text-[#1B4332] active:scale-95 transition-all text-sm">-</button>
-                    <input type="number" step="0.1" value={cat.tray} onChange={(e) => cat.setTray(e.target.value)} placeholder="0" className="flex-1 px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-[12px] focus:border-[#40916C] outline-none text-[#1B4332] text-center" />
-                    <button type="button" onClick={() => cat.setTray((prev) => (parseFloat(prev || "0") + 0.5).toFixed(1))} className="w-10 h-10 bg-gray-100 rounded-[10px] font-bold text-[#1B4332] active:scale-95 transition-all text-sm">+</button>
+                  <label className="text-xs font-semibold text-gray-600 mb-1.5 block">Tray</label>
+                  <div className="flex gap-1.5">
+                    <button type="button" onClick={() => cat.setTray((prev) => Math.max(0, parseFloat(prev || "0") - 0.5).toFixed(1))} className="w-9 h-9 bg-gray-100 rounded-[10px] font-bold text-[#1B4332] active:scale-95 transition-all text-sm">-</button>
+                    <input type="number" step="0.1" value={cat.tray} onChange={(e) => cat.setTray(e.target.value)} placeholder="0" className="flex-1 px-2 py-2 bg-gray-50 border-2 border-gray-200 rounded-[10px] focus:border-[#40916C] outline-none text-[#1B4332] text-center text-sm" />
+                    <button type="button" onClick={() => cat.setTray((prev) => (parseFloat(prev || "0") + 0.5).toFixed(1))} className="w-9 h-9 bg-gray-100 rounded-[10px] font-bold text-[#1B4332] active:scale-95 transition-all text-sm">+</button>
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Harga/Tray</label>
-                  <input type="number" value={cat.harga} onChange={(e) => cat.setHarga(e.target.value)} placeholder="0" className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-[12px] focus:border-[#40916C] outline-none text-[#1B4332]" />
+                  <label className="text-xs font-semibold text-gray-600 mb-1.5 block">Harga/Tray</label>
+                  <input type="number" value={cat.harga} onChange={(e) => cat.setHarga(e.target.value)} placeholder="0" className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-[10px] focus:border-[#40916C] outline-none text-[#1B4332] text-sm" />
                 </div>
               </div>
               {cat.tray && cat.harga && (
-                <p className="text-xs text-gray-500 mt-2">Subtotal: <span className="font-bold text-[#1B4332]">Rp {(parseFloat(cat.tray) * parseFloat(cat.harga)).toLocaleString("id-ID")}</span></p>
+                <p className="text-xs text-gray-500 mt-2.5 pt-2.5 border-t border-gray-100">Subtotal: <span className="font-bold text-[#1B4332]">Rp {(parseFloat(cat.tray) * parseFloat(cat.harga)).toLocaleString("id-ID")}</span></p>
               )}
             </div>
           ))}
         </div>
 
-        <div className="bg-white rounded-[24px] p-5 shadow-sm">
+        <div className="bg-white rounded-[20px] p-4 shadow-sm">
           <label className="text-sm font-semibold text-[#1B4332] mb-2 block">Keterangan</label>
           <input type="text" value={keterangan} onChange={(e) => setKeterangan(e.target.value)} placeholder="Opsional" className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-[16px] focus:border-[#40916C] outline-none text-[#1B4332]" />
         </div>
 
         {totalButir > 0 && (
-          <div className="bg-white rounded-[24px] p-5 shadow-sm border-2 border-[#40916C]">
-            <h3 className="font-bold text-[#1B4332] mb-3">Ringkasan</h3>
+          <div className="bg-white rounded-[20px] p-4 shadow-sm border-2 border-[#40916C]">
+            <h3 className="font-bold text-[#1B4332] mb-3 text-sm">Ringkasan</h3>
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Total Telur</span>
@@ -183,8 +183,8 @@ export default function PWAPenjualan() {
         )}
       </div>
 
-      <div className="fixed bottom-20 left-0 right-0 px-6 pb-4 bg-gradient-to-t from-[#FDFCF7] via-[#FDFCF7] to-transparent pt-6">
-        <button onClick={handleSubmit} disabled={totalButir === 0} className="w-full h-14 bg-[#1B4332] text-white rounded-[20px] font-bold active:scale-95 transition-all disabled:opacity-50 shadow-lg flex items-center justify-center gap-2">
+      <div className="fixed left-0 right-0 px-4 pb-3 bg-gradient-to-t from-[#FDFCF7] via-[#FDFCF7] to-transparent pt-4 z-40" style={{ bottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
+        <button onClick={handleSubmit} disabled={totalButir === 0} className="w-full h-12 bg-[#1B4332] text-white rounded-[16px] font-bold active:scale-95 transition-all disabled:opacity-50 shadow-lg flex items-center justify-center gap-2">
           <Check className="h-5 w-5" />Simpan Penjualan
         </button>
       </div>

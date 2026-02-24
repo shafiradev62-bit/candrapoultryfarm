@@ -219,6 +219,10 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         }
         if (supabaseData.feedFormulas.length > 0) {
           setFeedFormulas(supabaseData.feedFormulas);
+        } else {
+          // If Supabase has no formulas, push default formulas
+          console.log("📤 Pushing default feed formulas to Supabase...");
+          await pushToSupabase('feed_formulas', defaultData.feedFormulas);
         }
         console.log("✅ Data loaded from Supabase");
       }

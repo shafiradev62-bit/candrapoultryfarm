@@ -116,33 +116,33 @@ export default function PWAStok() {
 
   return (
     <PWALayout title="Stok">
-      <div className="px-6 pt-6 pb-8">
-        {/* Egg Stock Card */}
-        <div className="bg-[#1B4332] rounded-[28px] p-6 text-white shadow-lg mb-5">
-          <p className="text-sm opacity-80 mb-2">Stok Telur</p>
-          <p className="text-5xl font-bold mb-1">{currentStock.telurButir.toLocaleString("id-ID")}</p>
-          <p className="text-sm opacity-80 mb-5">butir · {currentStock.telurTray} tray</p>
+      <div className="space-y-4">
+        {/* Egg Stock Card - Proper */}
+        <div className="bg-[#1B4332] rounded-[24px] p-5 text-white shadow-lg">
+          <p className="text-xs opacity-80 mb-1">Stok Telur</p>
+          <p className="text-4xl font-bold mb-1">{currentStock.telurButir.toLocaleString("id-ID")}</p>
+          <p className="text-xs opacity-80 mb-4">butir · {currentStock.telurTray} tray</p>
           <button onClick={() => setShowEggSheet(true)} className="w-full h-12 bg-white text-[#1B4332] rounded-[16px] font-bold active:scale-95 transition-all">
             Kurangi Stok
           </button>
         </div>
 
-        {/* Feed Stock */}
-        <h3 className="text-base font-bold text-[#1B4332] mb-4">Stok Pakan</h3>
+        {/* Feed Stock - Proper */}
+        <h3 className="text-sm font-bold text-[#1B4332] mb-3">Stok Pakan</h3>
         <div className="space-y-3">
           {stockItems.map((item) => (
-            <div key={item.type} className="bg-white rounded-[20px] p-5 shadow-sm">
+            <div key={item.type} className="bg-white rounded-[20px] p-4 shadow-sm">
               <div className="flex justify-between items-center mb-3">
                 <span className="text-sm font-semibold text-[#1B4332]">{item.name}</span>
-                <span className="text-2xl font-bold text-[#1B4332]">{item.value.toFixed(0)} kg</span>
+                <span className="text-xl font-bold text-[#1B4332]">{item.value.toFixed(0)} kg</span>
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {[10, 50, 100].map((amount) => (
-                  <button key={amount} onClick={() => handleQuickUpdate(item.type, amount)} className="h-10 bg-[#40916C]/10 text-[#1B4332] rounded-[12px] font-bold active:scale-95 transition-all">
+                  <button key={amount} onClick={() => handleQuickUpdate(item.type, amount)} className="h-10 bg-[#40916C]/10 text-[#1B4332] rounded-[12px] font-bold active:scale-95 transition-all text-sm">
                     +{amount}
                   </button>
                 ))}
-                <button onClick={() => { setSelectedFeedType(item.type); setShowFeedSheet(true); }} className="h-10 bg-[#1B4332] text-white rounded-[12px] font-bold active:scale-95 transition-all">
+                <button onClick={() => { setSelectedFeedType(item.type); setShowFeedSheet(true); }} className="h-10 bg-[#1B4332] text-white rounded-[12px] font-bold active:scale-95 transition-all text-sm">
                   Custom
                 </button>
               </div>

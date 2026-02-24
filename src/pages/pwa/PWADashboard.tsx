@@ -19,17 +19,17 @@ export default function PWADashboard() {
 
   return (
     <PWALayout>
-      <div className="px-6 pt-6 pb-8">
-        {/* Greeting */}
-        <div className="mb-6">
-          <p className="text-sm text-gray-500">Hello, Good Morning</p>
-          <h2 className="text-2xl font-bold text-[#1B4332] capitalize">{role || "User"}</h2>
+      <div className="space-y-4">
+        {/* Greeting - Proper */}
+        <div className="mb-4">
+          <p className="text-xs text-gray-500">Hello, Good Morning</p>
+          <h2 className="text-xl font-bold text-[#1B4332] capitalize">{role || "User"}</h2>
           <p className="text-xs text-gray-400 mt-1">{new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "short", year: "numeric" })}</p>
         </div>
 
-        {/* Main Stats */}
-        <div className="bg-white rounded-[28px] p-6 shadow-sm mb-5">
-          <div className="grid grid-cols-2 gap-6">
+        {/* Main Stats - Proper */}
+        <div className="bg-white rounded-[24px] p-5 shadow-sm">
+          <div className="grid grid-cols-2 gap-5">
             <div>
               <p className="text-xs text-gray-500 mb-1">Populasi</p>
               <p className="text-3xl font-bold text-[#1B4332]">{latestReport?.jumlahAyam || 0}</p>
@@ -43,7 +43,7 @@ export default function PWADashboard() {
           </div>
 
           {hasLowStock && (
-            <div className="mt-5 pt-5 border-t border-gray-100">
+            <div className="mt-4 pt-4 border-t border-gray-100">
               <div className="bg-red-50 rounded-[16px] px-4 py-3">
                 <p className="text-xs font-semibold text-red-900">⚠️ Peringatan Stok</p>
                 <p className="text-xs text-red-700 mt-1">Beberapa stok pakan menipis</p>
@@ -52,9 +52,9 @@ export default function PWADashboard() {
           )}
         </div>
 
-        {/* Stock Pakan */}
-        <div className="mb-5">
-          <h3 className="text-base font-bold text-[#1B4332] mb-3">Stok Pakan</h3>
+        {/* Stock Pakan - Proper */}
+        <div>
+          <h3 className="text-sm font-bold text-[#1B4332] mb-3">Stok Pakan</h3>
           <div className="space-y-3">
             <div className="bg-white rounded-[20px] p-4 shadow-sm">
               <div className="flex justify-between items-center mb-2">
@@ -88,26 +88,26 @@ export default function PWADashboard() {
           </div>
         </div>
 
-        {/* Latest Report */}
+        {/* Latest Report - Proper */}
         {latestReport && (
           <div>
-            <h3 className="text-base font-bold text-[#1B4332] mb-3">Laporan Terakhir</h3>
-            <div className="bg-white rounded-[20px] p-5 shadow-sm space-y-3">
+            <h3 className="text-sm font-bold text-[#1B4332] mb-3">Laporan Terakhir</h3>
+            <div className="bg-white rounded-[20px] p-4 shadow-sm space-y-2.5">
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Tanggal</span>
-                <span className="font-semibold text-[#1B4332]">{latestReport.tanggal}</span>
+                <span className="text-sm font-semibold text-[#1B4332]">{latestReport.tanggal}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Produksi Telur</span>
-                <span className="font-bold text-[#40916C]">{latestReport.prodButir} butir</span>
+                <span className="text-sm font-bold text-[#40916C]">{latestReport.prodButir} butir</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Total Pakan</span>
-                <span className="font-bold text-orange-600">{latestReport.totalPakan} kg</span>
+                <span className="text-sm font-bold text-orange-600">{latestReport.totalPakan} kg</span>
               </div>
-              <div className="flex justify-between pt-3 border-t border-gray-100">
+              <div className="flex justify-between pt-2 border-t border-gray-100">
                 <span className="text-sm text-gray-500">% Produksi</span>
-                <span className="font-bold text-[#1B4332]">{latestReport.pctProduksi}</span>
+                <span className="text-sm font-bold text-[#1B4332]">{latestReport.pctProduksi}</span>
               </div>
             </div>
           </div>
